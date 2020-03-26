@@ -1,0 +1,17 @@
+*__pycache__*
+*.hd5
+models
+sandbox.py
+*.txt
+*.pyc
+!requirements.txt
+venv*
+.idea*
+pretrained_*
+classifier/kirilenko/__pycache__
+classifier/shepelev/__pycache__
+configs/__pycache__
+watchdog/conrtollers/__pycache__
+watchdog/gui/__pycache__
+watchdog/worker/__pycache__
+logs*
