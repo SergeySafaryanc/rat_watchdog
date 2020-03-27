@@ -72,6 +72,9 @@ class AbstractDataWorker(QThread):
             self.stop()
             res = self.classifierWrapper.train(path)
             res.append(kir_train_seq_SLP1.train(path))
+            labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(res[0][1]) / len(odors_true)))])[-len(res[0][1]):]
+            res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in res]
+            print(res)
             np.savetxt(os.path.join(out_path, "acc_classifiers.csv"), np.array(res), delimiter=",")
             selected_classifiers = self.select(res)
             np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
@@ -88,6 +91,8 @@ class AbstractDataWorker(QThread):
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
         v = kir_train_seq_SLP1.train(train_file_path)
+        labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(v[1]) / len(odors_true)))])[-len(v[1]):]
+        v = (v[0], np.mean(np.array(self.classifierWrapper.convert_result_log(v[1])) == labels) * 100)
         print(v)
         if v[1] > validation_thresh:
             self.train(os.path.join(train_file_path))

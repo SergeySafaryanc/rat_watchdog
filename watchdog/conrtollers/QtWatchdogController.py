@@ -135,6 +135,8 @@ class QtWatchdogController:
                                     decimate_rate, self.channel_pairs)
             self.initDataWorker(worker)
             worker.start()
+
+            # worker.train(os.path.join(inp_path, f))
             message, color = result_messages[0]
             self.gui.mainWindow.showMessage(message, "background: %s" % color)
             self.workers[key] = worker
