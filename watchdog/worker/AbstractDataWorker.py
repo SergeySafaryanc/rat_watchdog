@@ -8,7 +8,7 @@ from itertools import groupby
 from classifier.kirilenko import kir_train_seq_SLP1
 from classifier.kirilenko.kir_test_seq_SLP1 import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
-
+from sklearn.metrics import confusion_matrix
 
 class AbstractDataWorker(QThread):
     stopRecord = pyqtSignal(str, int)
@@ -68,19 +68,30 @@ class AbstractDataWorker(QThread):
 
     def train(self, path):
         self.sendMessage.emit("Начато обучение")
-        try:
-            self.stop()
-            res = self.classifierWrapper.train(path)
-            res.append(kir_train_seq_SLP1.train(path))
-            labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(res[0][1]) / len(odors_true)))])[-len(res[0][1]):]
-            res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in res]
-            print(res)
-            np.savetxt(os.path.join(out_path, "acc_classifiers.csv"), np.array(res), delimiter=",")
-            selected_classifiers = self.select(res)
-            np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
-            self.sendMessage.emit("Обучено")
-        except:
-            self.sendMessage.emit("Ошибка при обучении")
+        # try:
+        self.stop()
+        res = self.classifierWrapper.train(path)
+        res.append(kir_train_seq_SLP1.train(path))
+        print("123")
+        # print(res)
+        res1 = [(r[0], self.classifierWrapper.convert_result_log(r[1])) for r in res]
+        # print(res1)
+
+        labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(math.ceil(len(res[0][1]) / len(odors_true)))])[-len(res[0][1]):]
+
+        for r in res1:
+            print(confusion_matrix(labels.tolist(), r[1]))
+
+        res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in res]
+        print(res)
+
+
+        np.savetxt(os.path.join(out_path, "acc_classifiers.csv"), np.array(res), delimiter=",")
+        selected_classifiers = self.select(res)
+        np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
+        self.sendMessage.emit("Обучено")
+        # except Exception:
+        #     self.senMessage.emit("Ошибка при обучении")
 
 
 

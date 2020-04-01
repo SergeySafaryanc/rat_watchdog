@@ -23,7 +23,7 @@ train_step = 25
 data_source_is_file = True
 is_result_validation = True
 
-is_train = False
+is_train = True
 use_auto_train = True
 
 odors = [("Взрывчатое", "#ffff00"), ("Наркотическое", "#ffff00"), ("Иное", "#ffff00"), ("4", "#ffff00"), ("5", "#ffff00"), ("3", "#ffff00")]
