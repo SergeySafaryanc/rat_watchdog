@@ -28,7 +28,7 @@ class ClassifierWrapper:
         return classifier(data, self.num_channels, self.odors, [], self.decimate)
 
     def train(self, file_name):
-        return train(file_name, self.num_channels, self.odors, self.unite[:2], self.decimate)
+        return train(file_name, self.num_channels, self.odors, [], self.decimate)
 
     def convert_result(self, label):
         for j in range(len(self.unite_test)):

@@ -66,30 +66,30 @@ class AbstractDataWorker(QThread):
         limit = 15
         return freq[(np.abs(np.fft.rfft(sig[:, num_channels - 2])) ** 2)[:len(freq[freq <= limit])].argmax(axis=0)]
 
-    def train(self, path):
-        self.sendMessage.emit("Начато обучение")
+    def train(self, path, stop=True):
+        # self.sendMessage.emit("Начато обучение")
         # try:
-        self.stop()
+        if stop:
+            self.stop()
         res = self.classifierWrapper.train(path)
         res.append(kir_train_seq_SLP1.train(path))
-        print("123")
-        # print(res)
-        res1 = [(r[0], self.classifierWrapper.convert_result_log(r[1])) for r in res]
-        # print(res1)
+        res1 = [(r[0], r[1]) for r in res]
+        dat = np.fromfile(path, "i2").reshape(-1, num_channels)
+        mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
+        labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
+        labels = [math.log(l, 2) for l in labels][-len(res[0][1]):]
 
-        labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(math.ceil(len(res[0][1]) / len(odors_true)))])[-len(res[0][1]):]
+        res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(labels)) * 100) for r in res]
 
-        for r in res1:
-            print(confusion_matrix(labels.tolist(), r[1]))
-
-        res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in res]
-        print(res)
-
+        # for r in res1:
+        #     print(confusion_matrix(self.classifierWrapper.convert_result_log(labels), self.classifierWrapper.convert_result_log(r[1])))
 
         np.savetxt(os.path.join(out_path, "acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
         np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
-        self.sendMessage.emit("Обучено")
+
+        return res
+        # self.sendMessage.emit("Обучено")
         # except Exception:
         #     self.senMessage.emit("Ошибка при обучении")
 
@@ -101,11 +101,19 @@ class AbstractDataWorker(QThread):
 
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        v = kir_train_seq_SLP1.train(train_file_path)
-        labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(v[1]) / len(odors_true)))])[-len(v[1]):]
-        v = (v[0], np.mean(np.array(self.classifierWrapper.convert_result_log(v[1])) == labels) * 100)
-        print(v)
-        if v[1] > validation_thresh:
+        # v = self.classifierWrapper.train(train_file_path)
+        # v.append(kir_train_seq_SLP1.train(train_file_path))
+        # # labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(v[1]) / len(odors_true)))])[-len(v[1]):]
+        # dat = np.fprint_logromfile(train_file_path, "i2").reshape(-1, num_channels)
+        # mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
+        # labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
+        # labels = [math.log(l, 2) for l in labels][-len(v[0][1]):]
+        # v = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in v]
+        # print(v)
+
+        res = self.train(train_file_path, False)
+        if np.mean(np.array([r[1] for r in res])) > validation_thresh:
+            self.stop()
             self.train(os.path.join(train_file_path))
 
     def stop(self):

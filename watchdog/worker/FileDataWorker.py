@@ -17,14 +17,13 @@ class FileDataWorker(AbstractDataWorker):
         self.label_index_list = []
 
     def run(self):
-        # if is_train:
-        #     self.train()
-        #     return
         self.working = True
         find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
 
-            while self.working:
+            while True:
+                if not self.working:
+                    continue
                 sleep(self.epoch_time)
                 bytes = f.read(self.bytes_to_read)
 

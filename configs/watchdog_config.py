@@ -7,7 +7,7 @@ PORT = 5000
     # dat inf с названием train или test.py + время начала записи
     # файлы с результатами имеют такое же название как и у dat файла с префиксами: result, _validation_result, _responses_classifiers
 wait_time = 1 # sec
-epoch_time = 0.09 # sec
+epoch_time = 0.9 # sec
 inp_path = "/home/maxburbelov/plexon/input"
 out_path = "/home/maxburbelov/plexon/output"
 
@@ -17,7 +17,7 @@ sampling_rate = 1000
 decimate_rate = 10
 num_channels = 18
 
-count_train_stimuls = 125
+count_train_stimuls = 100
 train_step = 25
 
 data_source_is_file = True
