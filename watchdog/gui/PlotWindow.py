@@ -14,7 +14,7 @@ class PlotWindow(BaseWindow):
         super().__init__(screen, fullScreen, center, size)
         self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint)
         self.channel_pairs = channel_pairs
-        self.figure, self.axis = plt.subplots(len(self.channel_pairs) + 2, 1, figsize=(15.5, 70))
+        self.figure, self.axis = plt.subplots(2, 1, figsize=(15.5, 70))
         self.figure.tight_layout(h_pad=0.001)
         for ax in self.axis:
             ax.set_axis_off()
@@ -46,10 +46,6 @@ class PlotWindow(BaseWindow):
             elif i == 1:
                 ax.plot([], color='green', label="corr")
                 ax.legend(loc="upper left")
-            else:
-                if not channel_pairs_to_corr_means:
-                    ax.plot([], color='green', label="corr: " + "-".join([str(n) for n in self.channel_pairs[i - 2]]))
-                    ax.legend(loc="upper left")
 
     def plot(self):
         proc = threading.Thread(target=self.renderPlotInThread)
@@ -65,11 +61,6 @@ class PlotWindow(BaseWindow):
             elif i == 1:
                 ax.plot(np.mean(self.dataCorr, axis=1), color='green', label="corr")
                 ax.legend(loc="upper left")
-            else:
-                if not channel_pairs_to_corr_means:
-                    ax.plot(self.dataCorr[:, i - 2],
-                            label="corr: " + "-".join([str(n) for n in self.channel_pairs[i - 2]]))
-                    ax.legend(loc="upper left")
             data_len = len(self.dataBR)
             ax.set_axis_off()
             x_min, x_max = (data_len - 60, data_len) if (data_len > 60) else (0, data_len)

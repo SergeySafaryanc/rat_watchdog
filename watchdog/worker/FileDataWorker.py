@@ -9,20 +9,22 @@ import numpy as np
 
 
 class FileDataWorker(AbstractDataWorker):
-    def __init__(self, f_name, name, bytes_to_read, epoch_time, decimate_rate, channel_pairs):
-        super().__init__(bytes_to_read, decimate_rate, channel_pairs, name)
+    def __init__(self, f_name, name, bytes_to_read, epoch_time, decimate_rate, channel_pairs, train_flag):
+        super().__init__(bytes_to_read, decimate_rate, channel_pairs, name, train_flag)
+        self.working = True
         self.f_name = f_name
         self.name = name
+        self.is_test_started = True
         self.epoch_time = epoch_time
         self.label_index_list = []
 
     def run(self):
-        self.working = True
         find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
 
             while True:
                 if not self.working:
+                    sleep(10)
                     continue
                 sleep(self.epoch_time)
                 bytes = f.read(self.bytes_to_read)
@@ -53,15 +55,20 @@ class FileDataWorker(AbstractDataWorker):
 
                 block = data[self.last_label_index - prestimul_length:self.last_label_index + clapan_length]
 
-                if is_train:
+                if self.train_flag:
                     self.resultTrain.emit(self.counter, math.log2(label) if label != 0 else 0)
                     self.counter += 1
                     if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                         self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                 else:
+                    if self.is_test_started:
+                        self.is_test_started = not self.is_test_started
+                        self.counter = 0
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
                                          self.classifierWrapper.convert_result(label))
                     self.counter += 1
+                    if self.counter == 100:
+                        self.stop()
 
                 # говнокод не трогать
                 if data[self.last_corr_index:].shape[0] >= corr_len:

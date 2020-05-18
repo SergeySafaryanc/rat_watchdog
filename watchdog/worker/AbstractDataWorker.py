@@ -5,10 +5,12 @@ import random
 import pandas as pd
 from itertools import groupby
 
+from configs.watchdog_config import *
 from classifier.kirilenko import kir_train_seq_SLP1
 from classifier.kirilenko.kir_test_seq_SLP1 import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
 from sklearn.metrics import confusion_matrix
+
 
 class AbstractDataWorker(QThread):
     stopRecord = pyqtSignal(str, int)
@@ -19,7 +21,7 @@ class AbstractDataWorker(QThread):
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
 
-    def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res):
+    def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
         self.bytes_to_read = bytes_to_read
@@ -35,6 +37,8 @@ class AbstractDataWorker(QThread):
         self.current_label = -1
         self.channel_pairs = channel_pairs
         self.path_to_res = path_to_res
+        self.accuracy = []
+        self.train_flag = train_flag
 
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
@@ -77,9 +81,12 @@ class AbstractDataWorker(QThread):
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
+        labels = [label for label in labels if label != 64]
         labels = [math.log(l, 2) for l in labels][-len(res[0][1]):]
 
-        res = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(labels)) * 100) for r in res]
+        res = [(r[0], np.mean(
+            np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
+                labels)) * 100) for r in res]
 
         # for r in res1:
         #     print(confusion_matrix(self.classifierWrapper.convert_result_log(labels), self.classifierWrapper.convert_result_log(r[1])))
@@ -93,28 +100,26 @@ class AbstractDataWorker(QThread):
         # except Exception:
         #     self.senMessage.emit("Ошибка при обучении")
 
-
-
     def validation_train(self, data):
         train_file_path = os.path.join(out_path, self.path_to_res + "_val.dat")
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
-
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        # v = self.classifierWrapper.train(train_file_path)
-        # v.append(kir_train_seq_SLP1.train(train_file_path))
-        # # labels = np.concatenate([self.classifierWrapper.convert_result_log(odors_true) for i in range(round(len(v[1]) / len(odors_true)))])[-len(v[1]):]
-        # dat = np.fprint_logromfile(train_file_path, "i2").reshape(-1, num_channels)
-        # mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
-        # labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
-        # labels = [math.log(l, 2) for l in labels][-len(v[0][1]):]
-        # v = [(r[0], np.mean(np.array(self.classifierWrapper.convert_result_log(r[1])) == labels) * 100) for r in v]
-        # print(v)
+        res = self.train(train_file_path, True)
+        self.accuracy.append(np.mean(np.array([r[1] for r in res])))
+        with open(os.path.join(out_path, '_res.txt'), 'a+') as f:
+            f.write(str(np.mean(np.array([r[1] for r in res]))))
+            f.write('\n')
+        self.working = True
+        if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 70) and (self.accuracy[-2] >= 70))):
+        # if self.accuracy[-1] >= 10:
+            self.applyTest()
 
-        res = self.train(train_file_path, False)
-        if np.mean(np.array([r[1] for r in res])) > validation_thresh:
-            self.stop()
-            self.train(os.path.join(train_file_path))
+        # if np.mean(np.array([r[1] for r in res])) > validation_thresh:
+        #     self.stop()
+
+    def applyTest(self):
+        self.train_flag = False
 
     def stop(self):
         self.working = False
@@ -155,8 +160,8 @@ class AbstractDataWorker(QThread):
         with open(os.path.join(out_path, path_to_res + '.inf'), 'w') as f:
             f.write(
                 "[Version]\nDevice=Smell-ADC\n\n[Object]\nFILE=\"\"\n\n[Format]\nType=binary\n\n[Parameters]\nNChannels={0}\nNSamplings={1}\nSamplingFrequency={2}\n\n[ChannelNames]\n{3}"
-                .format(num_channels, nNSamplings, sampling_rate,
-                        "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
+                    .format(num_channels, nNSamplings, sampling_rate,
+                            "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
 
     def dataProcessing(self, batch):
         self.tick.emit(self.corrcoef_between_channels(batch), self.breathing_rate(batch))

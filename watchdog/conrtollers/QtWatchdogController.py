@@ -132,7 +132,7 @@ class QtWatchdogController:
                 continue
             # 2 - размер short
             worker = FileDataWorker(os.path.join(inp_path, f), key, 2 * sampling_rate * num_channels, epoch_time,
-                                    decimate_rate, self.channel_pairs)
+                                    decimate_rate, self.channel_pairs, is_train)
             self.initDataWorker(worker)
             worker.start()
 
