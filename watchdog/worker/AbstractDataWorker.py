@@ -1,3 +1,4 @@
+import math
 import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -43,7 +44,7 @@ class AbstractDataWorker(QThread):
 
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
-        resK = np.array([int(tst_Spl_original_signal(block))])
+        resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
         res = self.classifierWrapper.convert_result_log(res)
@@ -77,7 +78,8 @@ class AbstractDataWorker(QThread):
         if stop:
             self.stop()
         res = self.classifierWrapper.train(path)
-        res.append(kir_train_seq_SLP1.train(path))
+        resK = self.kirClassifierWrapper.train(path)
+        res = res + resK
         res1 = [(r[0], r[1]) for r in res]
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
@@ -114,8 +116,9 @@ class AbstractDataWorker(QThread):
         self.working = True
         if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
         # if self.accuracy[-1] >= 10:
-            self.applyTest()
-
+        #     self.applyTest()
+            self.stop()
+            self.sendMessage("Обучено")
         # if np.mean(np.array([r[1] for r in res])) > validation_thresh:
         #     self.stop()
 

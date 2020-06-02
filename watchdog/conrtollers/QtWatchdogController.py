@@ -96,10 +96,10 @@ class QtWatchdogController:
 
     def sendMessage(self, message):
         self.gui.mainWindow.showMessage(message, "background: #CCC")
-        try:
-            vk_bot.send_message(message)
-        except Exception as e:
-            print(e)
+        # try:
+        #     vk_bot.send_message(message)
+        # except Exception as e:
+        #     print(e)
 
     def resultValidation(self, results, label, name):
         result, resultList = results

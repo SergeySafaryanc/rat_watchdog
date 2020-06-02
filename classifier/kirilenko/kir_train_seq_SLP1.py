@@ -469,7 +469,7 @@ def slope_original_signal_val_last(data):
     clf8 = GradientBoostingClassifier(loss='deviance', learning_rate=0.012, n_estimators=50, subsample=0.2,
                                       criterion='friedman_mse', min_samples_split=3, max_depth=3, random_state=42)
     clf8.fit(train_features, train_labels)
-    sc = clf8.predict(val_features)
+    sc = clf8.predict(val_features).astype(int)
     return (6, sc)
 
 def train(filename):

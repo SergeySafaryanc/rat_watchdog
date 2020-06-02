@@ -1,5 +1,5 @@
 from classifier.kirilenko import kir_train_seq_SLP1, kir_train_seq_SLP_LDA, kir_train_seq_SLP_LDA_PT
-
+import numpy as np
 
 class KirClassifierWrapper:
     def __init__(self):
