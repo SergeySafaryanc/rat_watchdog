@@ -67,7 +67,7 @@ class FileDataWorker(AbstractDataWorker):
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
                                          self.classifierWrapper.convert_result(label))
                     self.counter += 1
-                    if self.counter == 100:
+                    if self.counter == 50:
                         self.stop()
 
                 # говнокод не трогать

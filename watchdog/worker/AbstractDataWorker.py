@@ -4,12 +4,12 @@ from PyQt5.QtCore import QThread, pyqtSignal
 import random
 import pandas as pd
 from itertools import groupby
+import  numpy as np
+import os
 
+from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
 from configs.watchdog_config import *
-from classifier.kirilenko import kir_train_seq_SLP1
-from classifier.kirilenko.kir_test_seq_SLP1 import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
-from sklearn.metrics import confusion_matrix
 
 
 class AbstractDataWorker(QThread):
@@ -24,6 +24,7 @@ class AbstractDataWorker(QThread):
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
+        self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
         self.counter = 0
         self.decimate_rate = decimate_rate
@@ -111,7 +112,7 @@ class AbstractDataWorker(QThread):
             f.write(str(np.mean(np.array([r[1] for r in res]))))
             f.write('\n')
         self.working = True
-        if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 70) and (self.accuracy[-2] >= 70))):
+        if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
         # if self.accuracy[-1] >= 10:
             self.applyTest()
 
