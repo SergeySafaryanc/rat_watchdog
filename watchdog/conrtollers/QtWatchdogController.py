@@ -36,7 +36,7 @@ class QtWatchdogController:
             # 2 - размер short
             # 1 - АЦП
             worker = SocketDataWorker(2 * sampling_rate * (num_channels + 1) * decimate_rate, decimate_rate,
-                                      num_channels + 1, self.channel_pairs)
+                                      num_channels + 1, self.channel_pairs, is_train)
             self.initDataWorker(worker)
             if is_train:
                 self.gui.mainWindow.trainButton.clicked.connect(worker.runThreadTrain)

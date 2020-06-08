@@ -14,7 +14,7 @@ class PlotWindow(BaseWindow):
         super().__init__(screen, fullScreen, center, size)
         self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint)
         self.channel_pairs = channel_pairs
-        self.figure, self.axis = plt.subplots(2, 1, figsize=(15.5, 70))
+        self.figure, self.axis = plt.subplots(2, 1, figsize=(16, 5))
         self.figure.tight_layout(h_pad=0.001)
         for ax in self.axis:
             ax.set_axis_off()

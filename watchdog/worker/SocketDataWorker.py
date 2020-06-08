@@ -54,7 +54,6 @@ class SocketDataWorker(AbstractDataWorker):
 
                     with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
                         np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
-
                     size_read = data.shape[0]
 
                     self.create_inf(self.path_to_res, size_read)
@@ -75,6 +74,9 @@ class SocketDataWorker(AbstractDataWorker):
                         self.resultTrain.emit(self.counter,
                                               math.log2(label) if label != 0 else 0)
                         self.counter += 1
+                        if self.counter == 195:
+                            self.stop()
+                            self.sendMessage.emit("Требуется заменить животное")
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:

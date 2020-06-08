@@ -479,7 +479,7 @@ def slope_original_signal_val_last(data):
     clf10 = LinearDiscriminantAnalysis(solver='svd')
     clf10.fit(train_features, train_labels)
     sc = clf10.predict(val_features).astype(int)
-    return (8, sc)
+    return (7, sc)
 
 def train(filename):
     slope_original_signal(read_dat_by_clapans(file_name=filename, lst_using_clapans=sum(mixture_groups, []), clapan_length=clapan_length,

@@ -108,17 +108,17 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, True)
+        res = self.train(train_file_path, False)
         self.accuracy.append(np.mean(np.array([r[1] for r in res])))
         with open(os.path.join(out_path, '_res.txt'), 'a+') as f:
             f.write(str(np.mean(np.array([r[1] for r in res]))))
             f.write('\n')
-        self.working = True
+        # self.working = True
         if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
         # if self.accuracy[-1] >= 10:
         #     self.applyTest()
             self.stop()
-            self.sendMessage("Обучено")
+            self.sendMessage.emit("Обучено")
         # if np.mean(np.array([r[1] for r in res])) > validation_thresh:
         #     self.stop()
 
