@@ -44,7 +44,7 @@ class AbstractDataWorker(QThread):
         self.train_flag = train_flag
 
     def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
@@ -98,6 +98,7 @@ class AbstractDataWorker(QThread):
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
         np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
+        np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
         return res
         # self.sendMessage.emit("Обучено")
