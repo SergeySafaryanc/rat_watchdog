@@ -7,7 +7,6 @@ from classifier.kirilenko import kir_train_seq_SLP1
 from classifier.kirilenko.kir_train_seq_SLP1 import train
 from configs.watchdog_config import *
 import socket
-from datetime import datetime
 
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
@@ -15,7 +14,7 @@ from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 class SocketDataWorker(AbstractDataWorker):
 
     def __init__(self, bytes_to_read, decimate_rate, socket_num_channels, channel_pairs, is_train):
-        self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+
         super().__init__(bytes_to_read, decimate_rate, channel_pairs, "{0}_{1}".format("train" if is_train else "test", self.time_now), is_train)
         self.socket_num_channels = socket_num_channels
         self.label_index_list = []

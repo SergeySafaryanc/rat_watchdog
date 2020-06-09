@@ -1,8 +1,8 @@
+from datetime import datetime
 import math
 import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
-import random
 import pandas as pd
 from itertools import groupby
 import  numpy as np
@@ -24,6 +24,7 @@ class AbstractDataWorker(QThread):
 
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
+        self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
@@ -43,7 +44,7 @@ class AbstractDataWorker(QThread):
         self.train_flag = train_flag
 
     def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
@@ -94,9 +95,9 @@ class AbstractDataWorker(QThread):
         # for r in res1:
         #     print(confusion_matrix(self.classifierWrapper.convert_result_log(labels), self.classifierWrapper.convert_result_log(r[1])))
 
-        np.savetxt(os.path.join(out_path, "acc_classifiers.csv"), np.array(res), delimiter=",")
+        np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
-        np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
+        np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
         return res
         # self.sendMessage.emit("Обучено")
@@ -110,7 +111,7 @@ class AbstractDataWorker(QThread):
 
         res = self.train(train_file_path, False)
         self.accuracy.append(np.mean(np.array([r[1] for r in res])))
-        with open(os.path.join(out_path, '_res.txt'), 'a+') as f:
+        with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(np.mean(np.array([r[1] for r in res]))))
             f.write('\n')
         # self.working = True
