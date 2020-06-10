@@ -15,7 +15,7 @@ class SocketDataWorker(AbstractDataWorker):
 
     def __init__(self, bytes_to_read, decimate_rate, socket_num_channels, channel_pairs, is_train):
 
-        super().__init__(bytes_to_read, decimate_rate, channel_pairs, "{0}_{1}".format("train" if is_train else "test", self.time_now), is_train)
+        super().__init__(bytes_to_read, decimate_rate, channel_pairs, ("train" if is_train else "test"), is_train)
         self.socket_num_channels = socket_num_channels
         self.label_index_list = []
 
