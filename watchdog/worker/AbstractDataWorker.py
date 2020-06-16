@@ -43,7 +43,7 @@ class AbstractDataWorker(QThread):
         self.accuracy = []
         self.train_flag = train_flag
         if not data_source_is_file:
-            self.path_to_res = self.path_to_res + self.time_now
+            self.path_to_res = self.path_to_res + "_" + self.time_now
 
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")

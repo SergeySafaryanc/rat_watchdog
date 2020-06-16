@@ -21,7 +21,7 @@ train_step = 25
 data_source_is_file = False
 is_result_validation = True
 
-is_train = False
+is_train = True
 use_auto_train = True
 
 
@@ -32,7 +32,7 @@ odors_set = [1, 2, 4, 8, 16]
 
 unite = []
 
-unite_test = [[2, 4, 8], [1, 16]]  # Для подсчета результатов при смене клапанов
+unite_test = [[1, 2, 4], [8, 16]]  # Для подсчета результатов при смене клапанов
 
 odors_true = [0, 1, 2, 3, 4]
 
