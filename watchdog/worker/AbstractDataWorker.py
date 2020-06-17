@@ -50,6 +50,7 @@ class AbstractDataWorker(QThread):
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
+        print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
@@ -112,17 +113,18 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, False)
+        res = self.train(train_file_path, True)
         self.accuracy.append(np.mean(np.array([r[1] for r in res])))
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(np.mean(np.array([r[1] for r in res]))))
             f.write('\n')
-        # self.working = True
+
         if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
         # if self.accuracy[-1] >= 10:
-        #     self.applyTest()
-            self.stop()
-            self.sendMessage.emit("Обучено")
+            self.applyTest()
+        self.working = True
+            # self.stop()
+            # self.sendMessage.emit("Обучено")
         # if np.mean(np.array([r[1] for r in res])) > validation_thresh:
         #     self.stop()
 

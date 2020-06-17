@@ -8,8 +8,8 @@ PORT = 5000
 # файлы с результатами имеют такое же название как и у dat файла с префиксами: result, _validation_result, _responses_classifiers
 wait_time = 1  # sec
 epoch_time = 0.09  # sec
-inp_path = "/home/plexon/plexon/input"
-out_path = "/home/plexon/plexon/output"
+inp_path = "D:\Rats_odors\Development\commitees\online\input"
+out_path = "D:\Rats_odors\Development\commitees\online\output"
 
 sampling_rate = 1000
 decimate_rate = 10
@@ -18,7 +18,7 @@ num_channels = 18
 count_train_stimuls = 100
 train_step = 25
 
-data_source_is_file = False
+data_source_is_file = True
 is_result_validation = True
 
 is_train = True
