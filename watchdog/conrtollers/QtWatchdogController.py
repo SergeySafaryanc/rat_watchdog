@@ -31,7 +31,7 @@ class QtWatchdogController:
             worker = MainWorker(inp_path, wait_time)
             worker.filesDetected.connect(self.onFilesDetected)
             worker.start()
-            self.workers['main_thread'] = worker
+            self.workers['main'] = worker
         else:
             # 2 - размер short
             # 1 - АЦП
@@ -41,6 +41,7 @@ class QtWatchdogController:
             if is_train:
                 self.gui.mainWindow.trainButton.clicked.connect(worker.runThreadTrain)
             worker.start()
+            self.workers['main_thread'] = worker
 
         self.gui.start()
 
@@ -85,14 +86,20 @@ class QtWatchdogController:
     def onResultTrain(self, i, label):
         self.resultsCounter += 1
 
-        message = "%i. %s" % (self.resultsCounter, label)
+        if self.workers['main_thread'] == True:
+            message = "%i. %s" % (self.resultsCounter, label)
 
-        self.gui.mainWindow.showMessage(message, "background: %s" % result_messages[0][1])
-        self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
+            self.gui.mainWindow.showMessage(message, "background: %s" % result_messages[0][1])
+            self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
 
-        message, color = result_messages[0]
+            message, color = result_messages[0]
 
-        self.gui.mainWindow.showMessage(message, "background: %s" % color, show_result_delay * 1000)
+            self.gui.mainWindow.showMessage(message, "background: %s" % color, show_result_delay * 1000)
+        else:
+            message = "%i. %s" % (self.resultsCounter, label)
+
+            self.gui.mainWindow.showMessage(message, "background: %s" % result_messages[0][1])
+            self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
 
     def sendMessage(self, message):
         self.gui.mainWindow.showMessage(message, "background: #CCC")
@@ -135,7 +142,7 @@ class QtWatchdogController:
                                     decimate_rate, self.channel_pairs, is_train)
             self.initDataWorker(worker)
             worker.start()
-
+            self.workers['main_thread'] = worker
             # worker.train(os.path.join(inp_path, f))
             message, color = result_messages[0]
             self.gui.mainWindow.showMessage(message, "background: %s" % color)
