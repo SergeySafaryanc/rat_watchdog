@@ -38,7 +38,7 @@ class ClassifierWrapper:
     def convert_result_log(self, res):
         result = []
         for i in range(len(res)):
-            for j in range(len(unite_test)):
-                if res[i] in [math.log(it1, 2) for it1 in unite_test[j]]:
+            for j in range(len(self.unite)):
+                if res[i] in [math.log(it1, 2) for it1 in self.unite[j]]:
                     result.append(j)
         return result
