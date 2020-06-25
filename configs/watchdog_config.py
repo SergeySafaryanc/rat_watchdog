@@ -7,9 +7,9 @@ PORT = 5000
 # dat inf с названием train или test.py + время начала записи
 # файлы с результатами имеют такое же название как и у dat файла с префиксами: result, _validation_result, _responses_classifiers
 wait_time = 1  # sec
-epoch_time = 0.09  # sec
-inp_path = "D:\Rats_odors\Development\commitees\online\input"
-out_path = "D:\Rats_odors\Development\commitees\online\output"
+epoch_time = 0.04  # sec
+inp_path = "/home/maxburbelov/plexon/input"
+out_path = "/home/maxburbelov/plexon/output"
 
 sampling_rate = 1000
 decimate_rate = 10
@@ -32,7 +32,7 @@ odors_set = [1, 2, 4, 8, 16]
 
 unite = [[1, 2, 4], [8, 16]]
 
-unite_test = [[2, 4, 8], [1, 16]]  # Для подсчета результатов при смене клапанов
+unite_test = [[1, 2, 4], [8, 16]]  # Для подсчета результатов при смене клапанов
 
 odors_true = [0, 1, 2, 3, 4]
 

@@ -125,8 +125,6 @@ class AbstractDataWorker(QThread):
         self.working = True
             # self.stop()
             # self.sendMessage.emit("Обучено")
-        # if np.mean(np.array([r[1] for r in res])) > validation_thresh:
-        #     self.stop()
 
     def applyTest(self):
         self.train_flag = False
