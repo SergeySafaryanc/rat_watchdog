@@ -5,7 +5,7 @@ import threading
 from PyQt5.QtCore import QThread, pyqtSignal
 import pandas as pd
 from itertools import groupby
-import  numpy as np
+import numpy as np
 import os
 
 from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
@@ -84,7 +84,7 @@ class AbstractDataWorker(QThread):
         res = self.classifierWrapper.train(path)
         resK = self.kirClassifierWrapper.train(path)
         res = res + resK
-        res1 = [(r[0], r[1]) for r in res]
+        res1 = [r[1] for r in res]
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
@@ -100,10 +100,23 @@ class AbstractDataWorker(QThread):
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
-        np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
+        np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
+                   delimiter=",")
         np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
-        return res
+        # print("res1", res1)
+        # print("res2", [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+
+        answers = np.array(
+            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
+             range(len(res1[0]))]).reshape(len(labels), 1)
+        # print(answers)
+        with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
+            np.savetxt(f, answers, delimiter=",")
+        with open(os.path.join(out_path, self.time_now + "_train_labels.csv"), 'a+') as f:
+            np.savetxt(f, np.array(labels).reshape(len(labels), 1), delimiter=",")
+
+        return [res, selected_classifiers]
         # self.sendMessage.emit("Обучено")
         # except Exception:
         #     self.senMessage.emit("Ошибка при обучении")
@@ -113,18 +126,24 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, True)
+        res, selected_classifiers = self.train(train_file_path, True)
+
         self.accuracy.append(np.mean(np.array([r[1] for r in res])))
+        # self.accuracy.append(np.mean(np.array([res[int(i)][1] for i in selected_classifiers])))
+
+        print(selected_classifiers)
+        print(res)
+
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
-            f.write(str(np.mean(np.array([r[1] for r in res]))))
+            f.write(str(np.mean(np.array([res[int(i)][1] for i in selected_classifiers]))))
             f.write('\n')
 
         if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
         # if self.accuracy[-1] >= 10:
             self.applyTest()
         self.working = True
-            # self.stop()
-            # self.sendMessage.emit("Обучено")
+        # self.stop()
+        # self.sendMessage.emit("Обучено")
 
     def applyTest(self):
         self.train_flag = False
