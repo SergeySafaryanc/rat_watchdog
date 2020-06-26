@@ -105,18 +105,21 @@ class AbstractDataWorker(QThread):
         np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
         # print("res1", res1)
-        # print("res2", [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+        # print("res2",
+        #       [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
 
-        answers = np.array(
-            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
-             range(len(res1[0]))]).reshape(len(labels), 1)
-        # print(answers)
+        # answers = np.array([np.array([self.get_result(np.array([i[r] for i in res1])) for r in
+        #      range(len(res1[0]))]), np.array(labels)])
+        answers = np.array([self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+        answers_and_labels = np.array([answers, np.array(labels)])
+        # print(answers_and_labels)
+
+        accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(self.classifierWrapper.convert_result_log(labels))) * 100
+
         with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
-            np.savetxt(f, answers, delimiter=",")
-        with open(os.path.join(out_path, self.time_now + "_train_labels.csv"), 'a+') as f:
-            np.savetxt(f, np.array(labels).reshape(len(labels), 1), delimiter=",")
+            np.savetxt(f, answers_and_labels, delimiter=",")
 
-        return [res, selected_classifiers]
+        return accuracy
         # self.sendMessage.emit("Обучено")
         # except Exception:
         #     self.senMessage.emit("Ошибка при обучении")
@@ -126,20 +129,15 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res, selected_classifiers = self.train(train_file_path, True)
-
-        self.accuracy.append(np.mean(np.array([r[1] for r in res])))
-        # self.accuracy.append(np.mean(np.array([res[int(i)][1] for i in selected_classifiers])))
-
-        print(selected_classifiers)
-        print(res)
-
+        res = self.train(train_file_path, True)
+        self.accuracy.append(res)
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
-            f.write(str(np.mean(np.array([res[int(i)][1] for i in selected_classifiers]))))
+            f.write(str(res))
             f.write('\n')
 
-        if (self.accuracy[-1] >= 80 or (len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
-        # if self.accuracy[-1] >= 10:
+        if (self.accuracy[-1] >= 80 or (
+                len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
+            # if self.accuracy[-1] >= 10:
             self.applyTest()
         self.working = True
         # self.stop()
