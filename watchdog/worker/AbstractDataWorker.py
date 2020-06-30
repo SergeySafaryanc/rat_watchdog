@@ -77,8 +77,7 @@ class AbstractDataWorker(QThread):
         return freq[(np.abs(np.fft.rfft(sig[:, num_channels - 2])) ** 2)[:len(freq[freq <= limit])].argmax(axis=0)]
 
     def train(self, path, stop=True):
-        # self.sendMessage.emit("Начато обучение")
-        # try:
+
         if stop:
             self.stop()
         res = self.classifierWrapper.train(path)
@@ -95,24 +94,14 @@ class AbstractDataWorker(QThread):
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
 
-        # for r in res1:
-        #     print(confusion_matrix(self.classifierWrapper.convert_result_log(labels), self.classifierWrapper.convert_result_log(r[1])))
-
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
         np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
                    delimiter=",")
         np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
-        # print("res1", res1)
-        # print("res2",
-        #       [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
-
-        # answers = np.array([np.array([self.get_result(np.array([i[r] for i in res1])) for r in
-        #      range(len(res1[0]))]), np.array(labels)])
         answers = np.array([self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])
-        # print(answers_and_labels)
 
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(self.classifierWrapper.convert_result_log(labels))) * 100
 
@@ -120,16 +109,14 @@ class AbstractDataWorker(QThread):
             np.savetxt(f, answers_and_labels, delimiter=",")
 
         return accuracy
-        # self.sendMessage.emit("Обучено")
-        # except Exception:
-        #     self.senMessage.emit("Ошибка при обучении")
+
 
     def validation_train(self, data):
         train_file_path = os.path.join(out_path, self.path_to_res + "_val.dat")
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, True)
+        res = self.train(train_file_path, False)
         self.accuracy.append(res)
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(res))
@@ -137,11 +124,10 @@ class AbstractDataWorker(QThread):
 
         if (self.accuracy[-1] >= 80 or (
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
-            # if self.accuracy[-1] >= 10:
-            self.applyTest()
-        self.working = True
-        # self.stop()
-        # self.sendMessage.emit("Обучено")
+            self.stop()
+            self.sendMessage.emit("Обучено")
+        # self.applyTest()
+        # self.working = True
 
     def applyTest(self):
         self.train_flag = False
