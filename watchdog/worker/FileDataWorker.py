@@ -21,7 +21,8 @@ class FileDataWorker(AbstractDataWorker):
     def run(self):
         find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
-
+            odor_labels_set = set(odors_set)
+            size_read = 0
             while True:
                 if not self.working:
                     sleep(10)
@@ -36,24 +37,26 @@ class FileDataWorker(AbstractDataWorker):
 
                 data = self.record.reshape((-1, num_channels))
 
-                if find_label:
-                    for i in reversed(range(data.shape[0] - sampling_rate, data.shape[0] - 1)):
-                        if i > self.last_label_index and (data[i, -1] not in (0, 64)):
-                            self.last_label_index = i
-                            label = data[i, -1]
-                            find_label = False
-                            break
+                for i in range(size_read, data.shape[0]):
+                    if {data[i, -1]}.issubset(odor_labels_set.difference({self.current_label})):
+                        self.current_label = data[i, -1]
+                        self.last_label_index = i
+                        label = data[i, -1]
+                    else:
+                        if data[i, -1] == 64:
+                            self.current_label = -1
+                        data[i, -1] = 0
 
-                if find_label or data[self.last_label_index:].shape[0] < clapan_length:
-                    if data[:self.last_label_index].shape[0] < prestimul_length:
-                        find_label = True
+                size_read = data.shape[0]
+
+                if (data[self.last_label_index:].shape[0] < clapan_length) or (
+                        data[:self.last_label_index].shape[0] < prestimul_length):
                     continue
-                else:
-                    find_label = True
+
+                block = np.copy(
+                    data[self.last_label_index - prestimul_length:self.last_label_index + clapan_length])
 
                 self.label_index_list.append(self.last_label_index)
-
-                block = data[self.last_label_index - prestimul_length:self.last_label_index + clapan_length]
 
                 if self.train_flag:
                     self.resultTrain.emit(self.counter, math.log2(label) if label != 0 else 0)
@@ -73,6 +76,7 @@ class FileDataWorker(AbstractDataWorker):
                     if self.counter == 50:
                         self.stop()
 
+                self.last_label_index = 0
                 # говнокод не трогать
                 if data[self.last_corr_index:].shape[0] >= corr_len:
                     self.last_corr_index += corr_len
