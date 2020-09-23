@@ -71,8 +71,7 @@ class SocketDataWorker(AbstractDataWorker):
                     self.label_index_list.append(self.last_label_index)
 
                     if is_train:
-                        self.resultTrain.emit(self.counter,
-                                              math.log2(label) if label != 0 else 0)
+                        self.resultTrain.emit(self.counter, labels_map[label])
                         self.counter += 1
                         if self.counter == 195:
                             self.stop()
@@ -81,7 +80,7 @@ class SocketDataWorker(AbstractDataWorker):
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:
                         self.resultTest.emit(self.time_now, self.counter, self.predict(block),
-                                             self.classifierWrapper.convert_result(label))
+                                             self.classifierWrapper.convert_result(labels_map[label]))
                         self.counter += 1
 
 

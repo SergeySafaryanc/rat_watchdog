@@ -59,7 +59,7 @@ class FileDataWorker(AbstractDataWorker):
                 self.label_index_list.append(self.last_label_index)
 
                 if self.train_flag:
-                    self.resultTrain.emit(self.counter, math.log2(label) if label != 0 else 0)
+                    self.resultTrain.emit(self.counter, labels_map[label])
                     self.counter += 1
                     if self.counter == 195:
                         self.stop()
@@ -72,7 +72,7 @@ class FileDataWorker(AbstractDataWorker):
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(label))
+                                         self.classifierWrapper.convert_result(labels_map[label]))
                     self.counter += 1
                     if self.counter == 50:
                         self.stop()

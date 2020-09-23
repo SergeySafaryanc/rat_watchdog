@@ -21,7 +21,7 @@ train_step = 25
 data_source_is_file = True
 is_result_validation = True
 
-is_train = True
+is_train = False
 use_auto_train = True
 
 
@@ -32,11 +32,10 @@ odors_set = [1, 2, 4, 8, 16]
 
 unite = [[0, 1, 2], [3, 4]]
 
+unite_test = [[0, 1, 2], [3, 4]]  # Для подсчета результатов при смене клапанов
+
+#для конвертации приходящих меток
 labels_map = {1: 0, 2: 1, 4: 2, 8: 3, 16: 4}
-
-unite_test = [[1, 2, 4], [8, 16]]  # Для подсчета результатов при смене клапанов
-
-odors_true = [0, 1, 2, 3, 4]
 
 result_messages = [("Ожидание", "#CCC")]
 show_result_delay = 2  # 20 # sec
