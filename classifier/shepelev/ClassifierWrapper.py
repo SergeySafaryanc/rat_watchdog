@@ -39,6 +39,6 @@ class ClassifierWrapper:
         result = []
         for i in range(len(res)):
             for j in range(len(self.unite)):
-                if res[i] in [math.log(it1, 2) for it1 in self.unite[j]]:
+                if res[i] in self.unite[j]:
                     result.append(j)
         return result

@@ -88,7 +88,7 @@ class AbstractDataWorker(QThread):
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
         labels = [label for label in labels if label != 64]
-        labels = [math.log(l, 2) for l in labels][-len(res[0][1]):]
+        labels = [labels_map[l] for l in labels][-len(res[0][1]):]
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(

@@ -64,6 +64,7 @@ class FileDataWorker(AbstractDataWorker):
                     if self.counter == 195:
                         self.stop()
                         self.sendMessage.emit("Требуется заменить животное")
+                        #TODO fix counter %
                     if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                         self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                 else:
