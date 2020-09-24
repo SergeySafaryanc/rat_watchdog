@@ -268,6 +268,7 @@ def slope_original_signal_val_last(data):
     clf10 = LinearDiscriminantAnalysis(solver='svd')
     clf10.fit(train_features, train_labels)
     sc = clf10.predict(val_features).astype(int)
+    sc -= 1
     return (7, sc)
 
 def train(filename):
