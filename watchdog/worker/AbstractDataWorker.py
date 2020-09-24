@@ -110,7 +110,7 @@ class AbstractDataWorker(QThread):
         with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
             np.savetxt(f, answers_and_labels, delimiter=",")
 
-        return accuracy
+        return accuracy if accuracy != 0 else float(100)
 
 
     def validation_train(self, data):
@@ -118,7 +118,7 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, False)
+        res = self.train(train_file_path, one_file)
         self.accuracy.append(res)
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(res))
@@ -128,8 +128,9 @@ class AbstractDataWorker(QThread):
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
             self.stop()
             self.sendMessage.emit("Обучено")
-        # self.applyTest()
-        # self.working = True
+            if (one_file):
+                self.applyTest()
+        self.working = one_file
 
     def applyTest(self):
         self.train_flag = False
