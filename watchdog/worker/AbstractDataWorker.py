@@ -1,5 +1,4 @@
 from datetime import datetime
-import math
 import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -88,11 +87,14 @@ class AbstractDataWorker(QThread):
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
         labels = [label for label in labels if label != 64]
-        labels = [math.log(l, 2) for l in labels][-len(res[0][1]):]
+        labels = [labels_map[l] for l in labels][-len(res[0][1]):]
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
+
+        #баг когда при точности 100% сохраняется как 0%
+        res = [(r[0], (r[1] if r[1] != 0 else float(100))) for r in res]
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)

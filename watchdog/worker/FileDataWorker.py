@@ -1,7 +1,3 @@
-import math
-import os
-
-from classifier.kirilenko import kir_train_seq_SLP1
 from configs.watchdog_config import *
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep
@@ -59,11 +55,12 @@ class FileDataWorker(AbstractDataWorker):
                 self.label_index_list.append(self.last_label_index)
 
                 if self.train_flag:
-                    self.resultTrain.emit(self.counter, math.log2(label) if label != 0 else 0)
+                    self.resultTrain.emit(self.counter, labels_map[label])
                     self.counter += 1
                     if self.counter == 195:
                         self.stop()
                         self.sendMessage.emit("Требуется заменить животное")
+                        #TODO fix counter %
                     if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                         self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                 else:
@@ -71,7 +68,7 @@ class FileDataWorker(AbstractDataWorker):
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(label))
+                                         self.classifierWrapper.convert_result(labels_map[label]))
                     self.counter += 1
                     if self.counter == 50:
                         self.stop()
