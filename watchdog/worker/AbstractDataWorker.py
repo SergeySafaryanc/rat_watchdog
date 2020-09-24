@@ -1,5 +1,4 @@
 from datetime import datetime
-import math
 import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -93,6 +92,9 @@ class AbstractDataWorker(QThread):
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
+
+        #баг когда при точности 100% сохраняется как 0%
+        res = [(r[0], (r[1] if r[1] != 0 else float(100))) for r in res]
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)

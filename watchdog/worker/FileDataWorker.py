@@ -1,7 +1,3 @@
-import math
-import os
-
-from classifier.kirilenko import kir_train_seq_SLP1
 from configs.watchdog_config import *
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep

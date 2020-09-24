@@ -3,8 +3,6 @@ import os
 
 import numpy as np
 
-from classifier.kirilenko import kir_train_seq_SLP1
-from classifier.kirilenko.kir_train_seq_SLP1 import train
 from configs.watchdog_config import *
 import socket
 
