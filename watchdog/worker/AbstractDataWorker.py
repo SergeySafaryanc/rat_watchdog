@@ -49,10 +49,13 @@ class AbstractDataWorker(QThread):
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
+
+        selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
+
         print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
-        return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
+        return [self.get_result(np.array([res[int(i)] for i in [selected_classifiers]])), res]
 
     def get_result(self, res):
         x = pd.Series(res)
@@ -93,8 +96,7 @@ class AbstractDataWorker(QThread):
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
 
-        #баг когда при точности 100% сохраняется как 0%
-        res = [(r[0], (r[1] if r[1] != 0 else float(100))) for r in res]
+        res = [(r[0], (r[1])) for r in res]
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
@@ -110,7 +112,7 @@ class AbstractDataWorker(QThread):
         with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
             np.savetxt(f, answers_and_labels, delimiter=",")
 
-        return accuracy if accuracy != 0 else float(100)
+        return accuracy
 
 
     def validation_train(self, data):
