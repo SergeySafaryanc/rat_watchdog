@@ -96,8 +96,6 @@ class AbstractDataWorker(QThread):
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
 
-        res = [(r[0], (r[1])) for r in res]
-
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
         np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
@@ -132,7 +130,8 @@ class AbstractDataWorker(QThread):
             self.sendMessage.emit("Обучено")
             if (one_file):
                 self.applyTest()
-        self.working = one_file
+        if (one_file):
+            self.working = True
 
     def applyTest(self):
         self.train_flag = False
