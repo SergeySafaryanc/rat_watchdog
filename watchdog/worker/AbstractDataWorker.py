@@ -49,6 +49,9 @@ class AbstractDataWorker(QThread):
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         res = np.concatenate((resS, resK), axis=None)
+
+        selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
+
         print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
@@ -93,9 +96,6 @@ class AbstractDataWorker(QThread):
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
 
-        #баг когда при точности 100% сохраняется как 0%
-        res = [(r[0], (r[1] if r[1] != 0 else float(100))) for r in res]
-
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
         np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
@@ -118,7 +118,7 @@ class AbstractDataWorker(QThread):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, False)
+        res = self.train(train_file_path, one_file)
         self.accuracy.append(res)
         with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(res))
@@ -128,8 +128,10 @@ class AbstractDataWorker(QThread):
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
             self.stop()
             self.sendMessage.emit("Обучено")
-        # self.applyTest()
-        # self.working = True
+            if (one_file):
+                self.applyTest()
+        if (one_file):
+            self.working = True
 
     def applyTest(self):
         self.train_flag = False
