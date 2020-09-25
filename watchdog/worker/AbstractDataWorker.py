@@ -55,7 +55,7 @@ class AbstractDataWorker(QThread):
         print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
-        return [self.get_result(np.array([res[int(i)] for i in [selected_classifiers]])), res]
+        return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     def get_result(self, res):
         x = pd.Series(res)
