@@ -138,7 +138,8 @@ class AbstractDataWorker(QThread):
         if (self.accuracy[-1] >= 80 or (
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
             self.stop()
-            self.sendMessage.emit("Обучено")
+            self.sendMessage.emit("...")
+            # self.sendMessage.emit("Обучено")
             if one_file:
                 self.applyTest()
         if one_file:

@@ -14,5 +14,9 @@ configs/__pycache__
 watchdog/conrtollers/__pycache__
 watchdog/gui/__pycache__
 watchdog/worker/__pycache__
+results
+logs
+data
+*.mdl
 logs*
 sclr_*

@@ -1,3 +1,4 @@
+from loguru import logger
 from configs.watchdog_config import *
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep
@@ -13,6 +14,7 @@ class FileDataWorker(AbstractDataWorker):
         self.is_test_started = True
         self.epoch_time = epoch_time
         self.label_index_list = []
+        logger.info(f"f_name = {self.f_name}\tname = {self.name}\tepoch_time = {self.epoch_time}")
 
     def run(self):
         find_label = True
