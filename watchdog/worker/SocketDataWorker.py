@@ -71,7 +71,7 @@ class SocketDataWorker(AbstractDataWorker):
                     if is_train:
                         self.resultTrain.emit(self.counter, labels_map[label])
                         self.counter += 1
-                        if self.counter == 195:
+                        if self.counter == num_counter_for_refresh_animal:
                             self.stop()
                             self.sendMessage.emit("Требуется заменить животное")
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:

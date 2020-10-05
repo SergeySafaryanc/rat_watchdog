@@ -228,4 +228,5 @@ def tst_Spl_original_signal(data,SamplingFrequency):
         output = result_loaded
     else:
         output = result_loaded[0]
+    print(f"Labels: {test_labels}\tOutput: {output}")
     return output-1

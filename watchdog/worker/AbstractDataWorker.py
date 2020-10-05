@@ -48,13 +48,19 @@ class AbstractDataWorker(QThread):
         selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
+        print(f"K: {str(resK)}")
+        print(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
-
+        print(f"res before: {str(res)}")
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
         print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
+        print (res, 'before convert result')
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
+
+        print(f"res after: {res}")
+        print(f"selected_classifiers: {selected_classifiers}")
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     def get_result(self, res):
@@ -84,8 +90,12 @@ class AbstractDataWorker(QThread):
             self.stop()
         res = self.classifierWrapper.train(path)
         resK = self.kirClassifierWrapper.train(path)
+        print(f"AbstractDataWorker.py: res: {res}")
+        print(f"AbstractDataWorker.py: resK: {resK}")
         res = res + resK
+        print(f"AbstractDataWorker.py: res: {res}")
         res1 = [r[1] for r in res]
+        print(f"AbstractDataWorker.py: res1: {res1}")
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
@@ -95,6 +105,7 @@ class AbstractDataWorker(QThread):
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
+        print(f"AbstractDataWorker.py: res(convert_result_log): {res}")
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
@@ -128,9 +139,9 @@ class AbstractDataWorker(QThread):
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
             self.stop()
             self.sendMessage.emit("Обучено")
-            if (one_file):
+            if one_file:
                 self.applyTest()
-        if (one_file):
+        if one_file:
             self.working = True
 
     def applyTest(self):

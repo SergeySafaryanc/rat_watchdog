@@ -57,7 +57,7 @@ class FileDataWorker(AbstractDataWorker):
                 if self.train_flag:
                     self.resultTrain.emit(self.counter, labels_map[label])
                     self.counter += 1
-                    if self.counter == 195:
+                    if self.counter == num_counter_for_refresh_animal:
                         self.stop()
                         self.sendMessage.emit("Требуется заменить животное")
                         #TODO fix counter %

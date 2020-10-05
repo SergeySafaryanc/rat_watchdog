@@ -23,8 +23,18 @@ class ClassifierWrapper:
         self.decimate = decimate
         self.unite_test = unite_test
 
+        print(f"ClassifierWrapper.py: num_channels: {num_channels}")
+        print(f"ClassifierWrapper.py: odors: {odors}")
+        print(f"ClassifierWrapper.py: unite: {unite}")
+        print(f"ClassifierWrapper.py: decimate: {decimate}")
+        print(f"ClassifierWrapper.py: unite_test: {unite_test}")
+
     def predict(self, data):
         # unite_index = [i[0] for i in self.unite]
+        print("<<<<<<<<<<<<<<<<<")
+        print (self.odors)
+        print(classifier(data, self.num_channels, self.odors, [], self.decimate))
+        print(">>>>>>>>>>>>>>>>")
         return classifier(data, self.num_channels, self.odors, [], self.decimate)
 
     def train(self, file_name):
@@ -41,4 +51,5 @@ class ClassifierWrapper:
             for j in range(len(self.unite)):
                 if res[i] in self.unite[j]:
                     result.append(j)
+        print(f"ClassifierWrapper.py: result: {result}")
         return result

@@ -21,7 +21,7 @@ class QtWatchdogController:
         self.rec = []
         self.dataBR = []
         self.dataCorr = []
-        self.validationResult = [{0: 0, 1: 0, 2: 0, 3: 0, 4: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}]
+        self.validationResult = [{0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}]
         if os.path.exists(os.path.join(out_path, 'correlations.npy')):
             self.dataCorr = np.load(os.path.join(out_path, 'correlations.npy')).tolist()
         if os.path.exists(os.path.join(out_path, 'breathing_rate.npy')):
@@ -113,10 +113,13 @@ class QtWatchdogController:
         errorColor = "#db3b21"
         okColor = "#60f750"
         color = (okColor if result == label else errorColor)
+        print ()
         self.validationResult[0][result] += 1 if result == label else 0
         self.validationResult[1][resultList[-1]] += 1 if resultList[-1] == label else 0
-
+        print(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
+        print(f"Odors: {odors}")
         with open(os.path.join(out_path, name + '_validation_result.csv'), 'w') as f:
+
             f.write(';'.join(map(lambda x: odors[x][0], self.validationResult[0].keys())))
             f.write('\n')
             f.write(';'.join(map(str, self.validationResult[0].values())))
