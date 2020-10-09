@@ -20,3 +20,5 @@ data
 *.mdl
 logs*
 sclr_*
+data
+results

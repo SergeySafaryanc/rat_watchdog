@@ -22,7 +22,8 @@ class QtWatchdogController:
         self.rec = []
         self.dataBR = []
         self.dataCorr = []
-        self.validationResult = [{0: 0, 1: 0, 2: 0}, {0: 0, 1: 0, 2: 0}]#[{0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}]
+        # self.validationResult = [{0: 0, 1: 0, 2: 0}, {0: 0, 1: 0, 2: 0}]#[{0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}]
+        self.validationResult = [validationResult,validationResult]#[{0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}]
         if os.path.exists(os.path.join(out_path, 'correlations.npy')):
             self.dataCorr = np.load(os.path.join(out_path, 'correlations.npy')).tolist()
         if os.path.exists(os.path.join(out_path, 'breathing_rate.npy')):
