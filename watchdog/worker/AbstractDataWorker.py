@@ -61,6 +61,8 @@ class AbstractDataWorker(QThread):
 
         print(f"res after: {res}")
         print(f"selected_classifiers: {selected_classifiers}")
+        print (res)
+        print(selected_classifiers)
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     def get_result(self, res):
