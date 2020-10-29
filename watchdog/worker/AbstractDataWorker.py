@@ -11,6 +11,8 @@ from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
 from configs.watchdog_config import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
 
+from watchdog.utils.build_protocol import build_protocol
+
 
 class AbstractDataWorker(QThread):
     stopRecord = pyqtSignal(str, int)
@@ -23,6 +25,9 @@ class AbstractDataWorker(QThread):
 
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
+
+        build_protocol(is_first=True)
+
         self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
@@ -95,9 +100,7 @@ class AbstractDataWorker(QThread):
         print(f"AbstractDataWorker.py: res: {res}")
         print(f"AbstractDataWorker.py: resK: {resK}")
         res = res + resK
-        print(f"AbstractDataWorker.py: res: {res}")
         res1 = [r[1] for r in res]
-        print(f"AbstractDataWorker.py: res1: {res1}")
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
@@ -107,7 +110,10 @@ class AbstractDataWorker(QThread):
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
+
+        print(self.record.shape)
         print(f"AbstractDataWorker.py: res(convert_result_log): {res}")
+        build_protocol([i[1] for i in res])
 
         np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select(res)
