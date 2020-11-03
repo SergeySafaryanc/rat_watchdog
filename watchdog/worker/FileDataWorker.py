@@ -1,5 +1,6 @@
 from loguru import logger
 from configs.watchdog_config import *
+from watchdog.utils.readme import Singleton
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep
 import numpy as np
@@ -61,6 +62,7 @@ class FileDataWorker(AbstractDataWorker):
                     self.counter += 1
                     if self.counter == num_counter_for_refresh_animal:
                         self.stop()
+                        Singleton.set("Результат", "Требуется заменить животное")
                         self.sendMessage.emit("Требуется заменить животное")
                         #TODO fix counter %
                     if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:

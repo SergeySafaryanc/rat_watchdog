@@ -6,6 +6,7 @@ import numpy as np
 from configs.watchdog_config import *
 import socket
 
+from watchdog.utils.readme import Singleton
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
 
@@ -50,7 +51,8 @@ class SocketDataWorker(AbstractDataWorker):
                                 self.current_label = -1
                             data[i, -1] = 0
 
-                    with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
+                    with open(os.path.join(self.exp_folder, self.path_to_res + ".dat"), 'ab') as f:
+                    # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
                         np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
                     size_read = data.shape[0]
 
@@ -73,6 +75,7 @@ class SocketDataWorker(AbstractDataWorker):
                         self.counter += 1
                         if self.counter == num_counter_for_refresh_animal:
                             self.stop()
+                            Singleton.set("Результат", "Требуется заменить животное")
                             self.sendMessage.emit("Требуется заменить животное")
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])

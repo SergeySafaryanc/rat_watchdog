@@ -11,10 +11,48 @@ from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
 from configs.watchdog_config import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
 
-from watchdog.utils.build_protocol import build_protocol
+# from watchdog.utils.readme import readme
+from loguru import logger
+
+from watchdog.utils.readme import Singleton, write
 
 
-class AbstractDataWorker(QThread):
+class TimeInstance(object):
+    """
+    Singleton impl
+    """
+    time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+
+    def __new__(cls):
+        if not hasattr(cls, 'time_now'):
+            cls.time_now = super(TimeInstance, cls).__new__(cls)
+        return cls.time_now
+
+
+class ExpFolder:
+    def __init__(self):
+        self.__time_now = TimeInstance()
+        self.__exp_folder = f"{out_path}/{self.__time_now}"
+        if not is_train:
+            folders = [fname for fname in os.listdir(f"{out_path}/") if
+                       os.path.isdir(os.path.join(f"{out_path}/", fname))]
+            sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}/", x)).st_mtime)
+            self.__exp_folder = f"{out_path}/{folders[0]}"
+            return
+        if os.path.exists(out_path) and os.path.exists(self.__exp_folder) is False:
+            os.mkdir(self.__exp_folder)
+            logger.debug(f"Folder - {self.__exp_folder} created")
+
+    @property
+    def time_now(self):
+        return self.__time_now
+
+    @property
+    def exp_folder(self):
+        return self.__exp_folder
+
+
+class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
@@ -26,9 +64,14 @@ class AbstractDataWorker(QThread):
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
 
-        build_protocol(is_first=True)
+        # readme(is_first=True)
 
-        self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+        # self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+        # self.__exp_folder = f"{out_path}/{self.time_now}"
+        # if os.path.exists(self.__exp_folder) is False:
+        #     os.mkdir(self.__exp_folder)
+        #     logger.debug(f"Folder - {self.__exp_folder} created")
+
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
@@ -50,7 +93,8 @@ class AbstractDataWorker(QThread):
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
     def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
+        # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
         print(f"K: {str(resK)}")
@@ -60,13 +104,13 @@ class AbstractDataWorker(QThread):
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
         print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        print (res, 'before convert result')
+        print(res, 'before convert result')
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
 
         print(f"res after: {res}")
         print(f"selected_classifiers: {selected_classifiers}")
-        print (res)
+        print(res)
         print(selected_classifiers)
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
@@ -113,41 +157,59 @@ class AbstractDataWorker(QThread):
 
         print(self.record.shape)
         print(f"AbstractDataWorker.py: res(convert_result_log): {res}")
-        build_protocol([i[1] for i in res])
+        Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
+        # readme([i[1] for i in res])
 
-        np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
-        selected_classifiers = self.select(res)
-        np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
+        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
-        np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
+        # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
+        selected_classifiers = self.select(res)
+        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_selected_classifiers.csv"),
+                   np.array(selected_classifiers),
+                   # np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
+                   delimiter=",")
+        np.savetxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), np.array(selected_classifiers),
+                   delimiter=",")
+        # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
-        answers = np.array([self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+        answers = np.array(
+            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])
 
-        accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(self.classifierWrapper.convert_result_log(labels))) * 100
+        accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
+            self.classifierWrapper.convert_result_log(labels))) * 100
 
-        with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
+        with open(os.path.join(self.exp_folder, self.time_now + "_train_answers.csv"), 'a+') as f:
+            # with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
             np.savetxt(f, answers_and_labels, delimiter=",")
 
         return accuracy
 
-
     def validation_train(self, data):
-        train_file_path = os.path.join(out_path, self.path_to_res + "_val.dat")
+        train_file_path = os.path.join(self.exp_folder, self.path_to_res + "_val.dat")
+        # train_file_path = os.path.join(out_path, self.path_to_res + "_val.dat")
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
         res = self.train(train_file_path, one_file)
         self.accuracy.append(res)
-        with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
+        with open(os.path.join(self.exp_folder, self.time_now + "_res.txt"), 'a+') as f:
+            # with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
             f.write(str(res))
             f.write('\n')
 
         if (self.accuracy[-1] >= 80 or (
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
+
+            # for k, v in Singleton.items():
+            #     print(f"Key={k}\tValue={v}")
+
             self.stop()
-            self.sendMessage.emit("...")
-            # self.sendMessage.emit("Обучено")
+            # self.sendMessage.emit("...")
+            Singleton.set("Результат", "Обучено")
+            write(Singleton.text())
+
+            self.sendMessage.emit("Обучено")
             if one_file:
                 self.applyTest()
         if one_file:
@@ -192,7 +254,8 @@ class AbstractDataWorker(QThread):
         return sorted([srt[i][0] for i in range(3)])
 
     def create_inf(self, path_to_res, nNSamplings):
-        with open(os.path.join(out_path, path_to_res + '.inf'), 'w') as f:
+        with open(os.path.join(self.exp_folder, path_to_res + '.inf'), 'w') as f:
+            # with open(os.path.join(out_path, path_to_res + '.inf'), 'w') as f:
             f.write(
                 "[Version]\nDevice=Smell-ADC\n\n[Object]\nFILE=\"\"\n\n[Format]\nType=binary\n\n[Parameters]\nNChannels={0}\nNSamplings={1}\nSamplingFrequency={2}\n\n[ChannelNames]\n{3}"
                     .format(num_channels, nNSamplings, sampling_rate,
@@ -207,7 +270,8 @@ class AbstractDataWorker(QThread):
         proc.start()
 
     def runThreadTrain(self):
-        proc = threading.Thread(target=self.train, args=[os.path.join(out_path, self.path_to_res + ".dat")])
+        # proc = threading.Thread(target=self.train, args=[os.path.join(out_path, self.path_to_res + ".dat")])
+        proc = threading.Thread(target=self.train, args=[os.path.join(self.exp_folder, self.path_to_res + ".dat")])
         proc.daemon = False
         proc.start()
 
