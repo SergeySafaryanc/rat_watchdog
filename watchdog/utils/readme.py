@@ -1,8 +1,4 @@
 from configs.watchdog_config import *
-import os
-
-# from watchdog.worker.AbstractDataWorker import *
-from watchdog.worker.AbstractDataWorker import ExpFolder
 
 
 class Singleton(object):
@@ -31,35 +27,6 @@ class Singleton(object):
 
     def __repr__(self):
         return f"Singleton[{self.__instance}]"
-
-
-class Stats(ExpFolder):
-    def __init__(self):
-        super().__init__()
-        path_to_file = ""
-        csv_file = [el.split(';')[-1][:-1] for el in open(file=path_to_file, encoding='utf-8').readlines()]
-        table = list(zip(csv_file, [i[0] for i in odors] * 50))
-        result = {}
-
-        for i in table:
-            if i[0] == i[1]:
-                result.update({i[1]: result.get(i[1], 0) + 1})
-            else:
-                result.update({i[1]: result.get(i[1], 0)})
-
-        Singleton.set("Predict", str(result))
-        # for k, v in result.items():
-        #     print(f'{k} - {v}/{int(round(len(table) / len(result), 0))}')
-
-# 29.10.2020.N56.2___res
-# 29.10.2020.N56.2__res - [*[!_]_res]
-
-#
-# def stats(directory: str):
-#     tmp = {}
-#     if os.path.isdir(directory):
-#         with open()
-#     pass
 
 
 def write(text=None, is_first=False, is_test=False):

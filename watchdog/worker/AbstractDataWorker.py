@@ -156,7 +156,7 @@ class AbstractDataWorker(QThread, ExpFolder):
                 labels)) * 100) for r in res]
 
         print(self.record.shape)
-        print(f"AbstractDataWorker.py: res(convert_result_log): {res}")
+        print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
         # readme([i[1] for i in res])
 
