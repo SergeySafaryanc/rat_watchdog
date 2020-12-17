@@ -32,12 +32,18 @@ class TimeInstance(object):
 class ExpFolder:
     def __init__(self):
         self.__time_now = TimeInstance()
-        self.__exp_folder = f"{out_path}/{self.__time_now}"
+        self.__exp_folder = f"{out_path}{os.sep}{self.__time_now}"
         if not is_train:
-            folders = [fname for fname in os.listdir(f"{out_path}/") if
-                       os.path.isdir(os.path.join(f"{out_path}/", fname))]
-            sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}/", x)).st_mtime)
-            self.__exp_folder = f"{out_path}/{folders[0]}"
+            folders = [fname for fname in os.listdir(f"{out_path}{os.sep}") if
+                       os.path.isdir(os.path.join(f"{out_path}{os.sep}", fname))]
+            print(folders)
+            folders = sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}{os.sep}", x)).st_mtime)
+            print(folders)
+            self.__exp_folder = f"{out_path}{os.sep}{folders[-1]}"
+            while (len(os.listdir(self.__exp_folder)) == 0):
+                folders = folders[:-1]
+                self.__exp_folder = f"{out_path}{os.sep}{folders[-1]}"
+            print(self.__exp_folder)
             return
         if os.path.exists(out_path) and os.path.exists(self.__exp_folder) is False:
             os.mkdir(self.__exp_folder)
@@ -158,6 +164,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(self.record.shape)
         print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
+        write(Singleton.text())
         # readme([i[1] for i in res])
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
@@ -191,7 +198,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
         self.create_inf(self.path_to_res + "_val", data.shape[0])
 
-        res = self.train(train_file_path, one_file)
+        res = self.train(train_file_path, data_source_is_file)  # обучение и остановка на файле
         self.accuracy.append(res)
         with open(os.path.join(self.exp_folder, self.time_now + "_res.txt"), 'a+') as f:
             # with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
@@ -212,7 +219,9 @@ class AbstractDataWorker(QThread, ExpFolder):
             self.sendMessage.emit("Обучено")
             if one_file:
                 self.applyTest()
-        if one_file:
+        if data_source_is_file and not (
+                self.accuracy[-1] >= 80 or (  # продолжение после остановки на файле, если НЕ обучено
+                len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
             self.working = True
 
     def applyTest(self):

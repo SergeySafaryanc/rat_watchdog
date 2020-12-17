@@ -6,7 +6,7 @@ import numpy as np
 from configs.watchdog_config import *
 import socket
 
-from watchdog.utils.readme import Singleton
+from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
 
@@ -76,6 +76,7 @@ class SocketDataWorker(AbstractDataWorker):
                         if self.counter == num_counter_for_refresh_animal:
                             self.stop()
                             Singleton.set("Результат", "Требуется заменить животное")
+                            write(Singleton.text())
                             self.sendMessage.emit("Требуется заменить животное")
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
