@@ -205,8 +205,8 @@ class AbstractDataWorker(QThread, ExpFolder):
             f.write(str(res))
             f.write('\n')
 
-        if (self.accuracy[-1] >= 80 or (
-                len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
+        if (self.accuracy[-1] >= acc_need or (
+                len(self.accuracy) > 1 and (self.accuracy[-1] >= acc_need_two_ts) and (self.accuracy[-2] >= acc_need_two_ts))):
 
             # for k, v in Singleton.items():
             #     print(f"Key={k}\tValue={v}")
@@ -220,8 +220,8 @@ class AbstractDataWorker(QThread, ExpFolder):
             if one_file:
                 self.applyTest()
         if data_source_is_file and not (
-                self.accuracy[-1] >= 80 or (  # продолжение после остановки на файле, если НЕ обучено
-                len(self.accuracy) > 1 and (self.accuracy[-1] >= 65) and (self.accuracy[-2] >= 65))):
+                self.accuracy[-1] >= acc_need or (  # продолжение после остановки на файле, если НЕ обучено
+                len(self.accuracy) > 1 and (self.accuracy[-1] >= acc_need_two_ts) and (self.accuracy[-2] >= acc_need_two_ts))):
             self.working = True
 
     def applyTest(self):
