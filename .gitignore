@@ -22,3 +22,4 @@ logs*
 sclr_*
 data
 results
+utils/backupLogs
