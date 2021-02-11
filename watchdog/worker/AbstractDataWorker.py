@@ -219,16 +219,20 @@ class AbstractDataWorker(QThread, ExpFolder):
             self.sendMessage.emit("Обучено")
             if one_file:
                 self.applyTest()
+                self.continueWork()
         if data_source_is_file and not (
                 self.accuracy[-1] >= acc_need or (  # продолжение после остановки на файле, если НЕ обучено
                 len(self.accuracy) > 1 and (self.accuracy[-1] >= acc_need_two_ts) and (self.accuracy[-2] >= acc_need_two_ts))):
-            self.working = True
+            self.continueWork()
 
     def applyTest(self):
         self.train_flag = False
 
-    def stop(self):
+    def stop(self):  # остановка работы
         self.working = False
+
+    def continueWork(self):  # продолжение работы
+        self.working = True
 
     def select(self, val):
         # val - список или кортеж кортежей, где каждый внутренний кортеж соответствует одному классификатору и имеет
