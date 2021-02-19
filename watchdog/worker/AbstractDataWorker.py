@@ -122,8 +122,11 @@ class AbstractDataWorker(QThread, ExpFolder):
 
     def get_result(self, res):
         x = pd.Series(res)
+        logger.info(x)
         x = x.value_counts()
+        logger.info(x)
         ind = x[x == x.max()].index
+        logger.info(ind)
         if len(ind) > 1:
             if 1 in ind:
                 return 1
@@ -142,7 +145,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         return freq[(np.abs(np.fft.rfft(sig[:, num_channels - 2])) ** 2)[:len(freq[freq <= limit])].argmax(axis=0)]
 
     def train(self, path, stop=True):
-
         if stop:
             self.stop()
         res = self.classifierWrapper.train(path)
@@ -150,16 +152,23 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(f"AbstractDataWorker.py: res: {res}")
         print(f"AbstractDataWorker.py: resK: {resK}")
         res = res + resK
+        logger.info(res)
         res1 = [r[1] for r in res]
+        logger.info(res1)
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
+        logger.info(mask)
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
+        logger.info(labels)
         labels = [label for label in labels if label != 64]
+        logger.info(labels)
         labels = [labels_map[l] for l in labels][-len(res[0][1]):]
+        logger.info(labels)
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
+        logger.info(res)
 
         print(self.record.shape)
         print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
@@ -179,10 +188,14 @@ class AbstractDataWorker(QThread, ExpFolder):
                    delimiter=",")
         # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
+        logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
         answers = np.array(
             [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])
-
+        logger.info(answers) #
+        logger.info(self.classifierWrapper.convert_result_log(answers)) #
+        logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
+            self.classifierWrapper.convert_result_log(labels))) #
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
 
