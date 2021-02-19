@@ -135,6 +135,16 @@ class AbstractDataWorker(QThread, ExpFolder):
         else:
             return ind[0]
 
+    def get_result_ter(self, res):
+        x = pd.Series(res)
+        logger.info(x)
+        x = x.value_counts()
+        logger.info(x)
+        pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+        ind = x[x == x.max()].index
+        logger.info(ind)
+        return ind[0]
+
     def corrcoef_between_channels(self, data):
         return [abs(np.corrcoef((data[:, pair[0]], data[:, pair[1]]))[0][1]) for pair in
                 np.asarray(self.channel_pairs)]
@@ -278,6 +288,10 @@ class AbstractDataWorker(QThread, ExpFolder):
                     if len(res) >= 3:
                         return sorted(res)
         return sorted([srt[i][0] for i in range(3)])
+
+    def select_ter(self, val):
+        sortedClassifiers = self.select(val)
+        #TODO сокращение кол-ва до трёх, если есть Колины в 4-5, то брать их (LDA)
 
     def create_inf(self, path_to_res, nNSamplings):
         with open(os.path.join(self.exp_folder, path_to_res + '.inf'), 'w') as f:
