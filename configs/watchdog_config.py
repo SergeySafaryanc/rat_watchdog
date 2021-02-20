@@ -15,7 +15,7 @@ out_path = "C:\\WatchdogFiles\\output"  # для Windows
 
 sampling_rate = 1000  # частота дискретизации
 decimate_rate = 1  # прорежение данных, 10 для PLEXON онлайн, 1 для ТД3 и оффлайн (.dat)
-num_channels = 18  # число каналов ЭГ+дыхание+метка
+num_channels = 17  # число каналов ЭГ+дыхание+метка
 
 num_counter_for_refresh_animal = 195  # количество стимулов для смены животного
 
@@ -25,7 +25,7 @@ train_step = 15  # число смещений (кол-во клапанов * 5
 data_source_is_file = True  # выбор датасорса, true - file, false - socket
 is_result_validation = True  # не трогать (типа валидация, кол-во правильных из скольких)
 
-is_train = False  # обучение или тестирование
+is_train = True  # обучение или тестирование
 use_auto_train = True  # обучение сразу после 100-ой подачи (не трограть)
 
 # Доп. запись

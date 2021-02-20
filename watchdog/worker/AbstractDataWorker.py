@@ -109,7 +109,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(f"res before: {str(res)}")
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
-        print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
+        print(self.get_result_ter(np.array([res[int(i)] for i in selected_classifiers])))
         print(res, 'before convert result')
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
@@ -118,7 +118,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(f"selected_classifiers: {selected_classifiers}")
         print(res)
         print(selected_classifiers)
-        return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
+        return [self.get_result_ter(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     def get_result(self, res):
         x = pd.Series(res)
@@ -140,7 +140,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(x)
         x = x.value_counts()
         logger.info(x)
-        pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+        x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+        logger.info(x)
         ind = x[x == x.max()].index
         logger.info(ind)
         return ind[0]
@@ -189,7 +190,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
         # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
-        selected_classifiers = self.select(res)
+        selected_classifiers = self.select_ter(res)
+        logger.info(selected_classifiers)  #
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_selected_classifiers.csv"),
                    np.array(selected_classifiers),
                    # np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
@@ -200,12 +202,12 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
         answers = np.array(
-            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+            [self.get_result_ter(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])
-        logger.info(answers) #
-        logger.info(self.classifierWrapper.convert_result_log(answers)) #
+        logger.info(answers)  #
+        logger.info(self.classifierWrapper.convert_result_log(answers))  #
         logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            self.classifierWrapper.convert_result_log(labels))) #
+            self.classifierWrapper.convert_result_log(labels)))  #
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
 
@@ -269,6 +271,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         if len(td) != 0:
             if len(td) in (1, 2) and any(
                     [td_[1] >= 80 for td_ in td]):  # если остался один, причем очень хороший, оставляем только его
+                logger.info(srt)  #
                 return sorted([td_[0] for td_ in td])
             ranks = [(acc, list(clfs)) for (acc, clfs) in
                      groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по
@@ -284,14 +287,39 @@ class AbstractDataWorker(QThread, ExpFolder):
                         for k in range(len(rank[1])):
                             res.append(rank[1][k][0])
                             if len(res) >= 3:
+                                logger.info(srt)  #
                                 return sorted(res)
                     if len(res) >= 3:
+                        logger.info(srt)  #
                         return sorted(res)
+        logger.info(srt)  #
         return sorted([srt[i][0] for i in range(3)])
 
     def select_ter(self, val):
-        sortedClassifiers = self.select(val)
         #TODO сокращение кол-ва до трёх, если есть Колины в 4-5, то брать их (LDA)
+        selected = self.select(val)  # выбранные классификаторы
+        logger.info(selected)
+        selected = list(map(lambda i: val[i], selected)) #  по номерам получаем и номера, и точности
+        logger.info(selected)
+        srt = sorted(selected, key=lambda x: x[1],
+                     reverse=True)  # сортировка по не округленной точности всех классификаторов
+        logger.info(srt)
+        if (len(srt) > 3):
+            logger.info("len(srt)>3")
+            apt = srt[3:5]  # претенденты на выбор
+            srt = srt[:3]  # первые три
+            logger.info(srt)
+            for clf in apt:  # ищем LDA
+                logger.info(clf)
+                if (clf[0]) == 7:  # если LDA
+                    srt.append(clf)
+            if (len(srt) < 4):
+                for clf in apt:  # ищем SLP
+                    logger.info(clf)
+                    if (clf[0]) == 6:  # если SLP
+                        srt.append(clf)
+                logger.info(srt)
+        return sorted([srt[i][0] for i in range(len(srt))])
 
     def create_inf(self, path_to_res, nNSamplings):
         with open(os.path.join(self.exp_folder, path_to_res + '.inf'), 'w') as f:
