@@ -166,6 +166,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(res)
         res1 = [r[1] for r in res]
         logger.info(res1)
+        val_res = res1
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         logger.info(mask)
@@ -175,6 +176,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         labels = [labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
+        val_res.append(np.array(labels))
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
@@ -205,6 +207,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             [self.get_result_ter(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])
         logger.info(answers)  #
+        val_res.append(np.array(answers))
         logger.info(self.classifierWrapper.convert_result_log(answers))  #
         logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels)))  #
@@ -215,6 +218,9 @@ class AbstractDataWorker(QThread, ExpFolder):
             # with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
             np.savetxt(f, answers_and_labels, delimiter=",")
 
+        np.savetxt(str((os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv"))),
+                   np.transpose(val_res),
+                   fmt="%d")
         return accuracy
 
     def validation_train(self, data):

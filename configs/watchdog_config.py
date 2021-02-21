@@ -8,14 +8,14 @@ PORT = 5000  # 5000 если передача удалённая, 4000 если 
 # _responses_classifiers
 wait_time = 1  # sec # ожидание детекта
 epoch_time = 0.04  # sec # время перерыва чтения из файла
-inp_path = "C:\\WatchdogFiles\\input"  # для Windows
-out_path = "C:\\WatchdogFiles\\output"  # для Windows
+inp_path = "/home/quantum/Documents/watchdog_files/inp"  # для Windows
+out_path = "/home/quantum/Documents/watchdog_files/out"  # для Windows
 # inp_path = "~/WatchdogFiles/input"  # для Linux
 # out_path = "~/WatchdogFiles/output"  # для Linux
 
 sampling_rate = 1000  # частота дискретизации
 decimate_rate = 1  # прорежение данных, 10 для PLEXON онлайн, 1 для ТД3 и оффлайн (.dat)
-num_channels = 17  # число каналов ЭГ+дыхание+метка
+num_channels = 18  # число каналов ЭГ+дыхание+метка
 
 num_counter_for_refresh_animal = 195  # количество стимулов для смены животного
 
@@ -42,7 +42,7 @@ odors = [("ТНТ", "#ffff00"), ("КП", "#ffff00"), ("Воздух", "#ffff00")
 # odors_set = [1, 2, 4, 8, 16]  # метки веществ с клапанов
 # odors_set = [1, 8, 9, 16]  # метки веществ с клапанов
 odors_set = [1, 2, 4]  # метки веществ с клапанов
-weights = [1, 0.9, 0.4]  # веса для надклассификатора: ТНТ=1, КП=0.9, Воздух=0.4
+weights = [1, 0.9, 0.51]  # веса для надклассификатора: ТНТ=1, КП=0.9, Воздух=0.4
 
 # unite = [[0], [1], [2], [3], [4]]  # метки веществ (числовые), передаётся в классификатор для обучения
 # unite = [[0], [1, 2, 3, 4]]  # метки веществ (числовые), передаётся в классификатор для обучения
@@ -112,6 +112,6 @@ validation_thresh = 80
 acc_need = 80  # необходимая точность на валидации для успешного обучения
 acc_need_two_ts = 70  # необходимая точность на двух последних валидациях для успешного обучения
 
-one_file = False  # костыль, если один файл для обучения и для тестирования, то True
+one_file = True  # костыль, если один файл для обучения и для тестирования, то True
 
 rat_name = "Н67"  # для формирования отчёта
