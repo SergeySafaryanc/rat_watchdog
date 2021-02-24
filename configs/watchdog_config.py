@@ -8,8 +8,8 @@ PORT = 5000  # 5000 если передача удалённая, 4000 если 
 # _responses_classifiers
 wait_time = 1  # sec # ожидание детекта
 epoch_time = 0.04  # sec # время перерыва чтения из файла
-inp_path = "/home/quantum/Documents/watchdog_files/inp"  # для Windows
-out_path = "/home/quantum/Documents/watchdog_files/out"  # для Windows
+inp_path = "C:\\WatchdogFiles\\input"  # для Windows
+out_path = "C:\\WatchdogFiles\\output"  # для Windows
 # inp_path = "~/WatchdogFiles/input"  # для Linux
 # out_path = "~/WatchdogFiles/output"  # для Linux
 
@@ -25,7 +25,7 @@ train_step = 15  # число смещений (кол-во клапанов * 5
 data_source_is_file = True  # выбор датасорса, true - file, false - socket
 is_result_validation = True  # не трогать (типа валидация, кол-во правильных из скольких)
 
-is_train = True  # обучение или тестирование
+is_train = False  # обучение или тестирование
 use_auto_train = True  # обучение сразу после 100-ой подачи (не трограть)
 
 # Доп. запись
@@ -112,6 +112,6 @@ validation_thresh = 80
 acc_need = 80  # необходимая точность на валидации для успешного обучения
 acc_need_two_ts = 70  # необходимая точность на двух последних валидациях для успешного обучения
 
-one_file = True  # костыль, если один файл для обучения и для тестирования, то True
+one_file = False  # костыль, если один файл для обучения и для тестирования, то True
 
 rat_name = "Н67"  # для формирования отчёта

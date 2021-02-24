@@ -166,7 +166,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(res)
         res1 = [r[1] for r in res]
         logger.info(res1)
-        val_res = res1
+        val_res = res1  # создание переменной с ответами классификаторов для дальнейшего вывода в файл
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
         logger.info(mask)
@@ -176,7 +176,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         labels = [labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
-        val_res.append(np.array(labels))
+        val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
@@ -194,7 +194,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select_ter(res)
         logger.info(selected_classifiers)  #
-        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_selected_classifiers.csv"),
+        np.savetxt(str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_selected_classifiers.csv")),
                    np.array(selected_classifiers),
                    # np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
                    delimiter=",")
@@ -205,22 +205,29 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
         answers = np.array(
             [self.get_result_ter(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
-        answers_and_labels = np.array([answers, np.array(labels)])
+        answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
         logger.info(answers)  #
-        val_res.append(np.array(answers))
+        val_res.append(np.array(answers))  # добавление ответов в вывод
         logger.info(self.classifierWrapper.convert_result_log(answers))  #
         logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels)))  #
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
-
+        #TODO убрать генерацию _train_answers (_valid_answers покрывает его и информативнее)
         with open(os.path.join(self.exp_folder, self.time_now + "_train_answers.csv"), 'a+') as f:
             # with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
             np.savetxt(f, answers_and_labels, delimiter=",")
 
-        np.savetxt(str((os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv"))),
+        answers_old = np.array(
+            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
+             range(len(res1[0]))])  # получение ответов по старой методике
+        val_res.append(np.array(answers_old))  # добавление ответов по старой методике в вывод
+        logger.info(val_res)
+
+        np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),
-                   fmt="%d")
+                   fmt="%d")  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
+
         return accuracy
 
     def validation_train(self, data):
