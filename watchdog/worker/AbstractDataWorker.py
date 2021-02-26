@@ -213,10 +213,6 @@ class AbstractDataWorker(QThread, ExpFolder):
             self.classifierWrapper.convert_result_log(labels)))  #
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
-        #TODO убрать генерацию _train_answers (_valid_answers покрывает его и информативнее)
-        with open(os.path.join(self.exp_folder, self.time_now + "_train_answers.csv"), 'a+') as f:
-            # with open(os.path.join(out_path, self.time_now + "_train_answers.csv"), 'a+') as f:
-            np.savetxt(f, answers_and_labels, delimiter=",")
 
         answers_old = np.array(
             [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
@@ -309,29 +305,23 @@ class AbstractDataWorker(QThread, ExpFolder):
         return sorted([srt[i][0] for i in range(3)])
 
     def select_ter(self, val):
-        #TODO сокращение кол-ва до трёх, если есть Колины в 4-5, то брать их (LDA)
         selected = self.select(val)  # выбранные классификаторы
         logger.info(selected)
-        selected = list(map(lambda i: val[i], selected)) #  по номерам получаем и номера, и точности
+        selected = list(map(lambda i: val[i], selected))  # по номерам получаем и номера, и точности
         logger.info(selected)
-        srt = sorted(selected, key=lambda x: x[1],
-                     reverse=True)  # сортировка по не округленной точности всех классификаторов
+        srt = sorted(val,
+                     key=lambda x: (-x[1], -x[0]))  # сортировка по убыванию точности и индекса (чтоб захватить Колины)
         logger.info(srt)
-        if (len(srt) > 3):
+        if (len(srt) > 3):  # если больше 3 вернул select
             logger.info("len(srt)>3")
-            apt = srt[3:5]  # претенденты на выбор
-            srt = srt[:3]  # первые три
-            logger.info(srt)
-            for clf in apt:  # ищем LDA
+            for clf in srt[:3]:  # ищем LDA или SLP
                 logger.info(clf)
-                if (clf[0]) == 7:  # если LDA
-                    srt.append(clf)
-            if (len(srt) < 4):
-                for clf in apt:  # ищем SLP
-                    logger.info(clf)
-                    if (clf[0]) == 6:  # если SLP
-                        srt.append(clf)
-                logger.info(srt)
+                if (clf[0]) == 7 or (clf[0]) == 6:  # если LDA или SLP
+                    srt = srt[:4]  # берём ещё один Шепелевский
+                    break
+            else:
+                srt = srt[:3]
+            logger.info(srt)
         return sorted([srt[i][0] for i in range(len(srt))])
 
     def create_inf(self, path_to_res, nNSamplings):
