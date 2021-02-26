@@ -178,6 +178,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
+        res_old = res  # для отчёта по ЦВ/НЕ ЦВ
+
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
@@ -188,6 +190,29 @@ class AbstractDataWorker(QThread, ExpFolder):
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
         write(Singleton.text())
         # readme([i[1] for i in res])
+        # Точность по ЦВ
+        cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
+        labels_cv_index = [x for x in range(len(labels)) if labels[x] == cv_index]
+        logger.info(labels_cv_index)
+        logger.info(np.array(labels)[labels_cv_index])
+        res_cv = [(r[0], np.mean(
+            np.array(self.classifierWrapper.convert_result_log(r[1][labels_cv_index])) == self.classifierWrapper.convert_result_log(
+                np.array(labels)[labels_cv_index])) * 100) for r in res_old]
+        logger.info(res_cv)
+        Singleton.set("Точность на валидации по ЦВ", f"{Singleton.get('Точность на валидации по ЦВ')}\n{[o[1] for o in res_cv]}")
+        write(Singleton.text())
+        #
+        # Точность по НЕ ЦВ
+        labels_necv_index = [x for x in range(len(labels)) if labels[x] != cv_index]
+        logger.info(labels_necv_index)
+        logger.info(np.array(labels)[labels_necv_index])
+        res_necv = [(r[0], np.mean(
+            np.array(self.classifierWrapper.convert_result_log(r[1][labels_necv_index])) == self.classifierWrapper.convert_result_log(
+                np.array(labels)[labels_necv_index])) * 100) for r in res_old]
+        logger.info(res_necv)
+        Singleton.set("Точность на валидации по НЕ ЦВ", f"{Singleton.get('Точность на валидации по НЕ ЦВ')}\n{[o[1] for o in res_necv]}")
+        write(Singleton.text())
+        #
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
@@ -309,7 +334,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(selected)
         selected = list(map(lambda i: val[i], selected))  # по номерам получаем и номера, и точности
         logger.info(selected)
-        srt = sorted(val,
+        srt = sorted(selected,
                      key=lambda x: (-x[1], -x[0]))  # сортировка по убыванию точности и индекса (чтоб захватить Колины)
         logger.info(srt)
         if (len(srt) > 3):  # если больше 3 вернул select
