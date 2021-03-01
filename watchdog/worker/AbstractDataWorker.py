@@ -222,27 +222,27 @@ class AbstractDataWorker(QThread, ExpFolder):
         write(Singleton.text())
         # readme([i[1] for i in res])
         # Точность по ЦВ
-        cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
-        labels_cv_index = [x for x in range(len(labels)) if labels[x] == cv_index]
-        logger.info(labels_cv_index)
-        logger.info(np.array(labels)[labels_cv_index])
-        res_cv = [(r[0], np.mean(
-            np.array(self.classifierWrapper.convert_result_log(r[1][labels_cv_index])) == self.classifierWrapper.convert_result_log(
-                np.array(labels)[labels_cv_index])) * 100) for r in res_old]
-        logger.info(res_cv)
-        Singleton.set("Точность на валидации по ЦВ", f"{Singleton.get('Точность на валидации по ЦВ')}\n{[o[1] for o in res_cv]}")
-        write(Singleton.text())
+        # cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
+        # labels_cv_index = [x for x in range(len(labels)) if labels[x] == cv_index]
+        # logger.info(labels_cv_index)
+        # logger.info(np.array(labels)[labels_cv_index])
+        # res_cv = [(r[0], np.mean(
+        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_cv_index])) == self.classifierWrapper.convert_result_log(
+        #         np.array(labels)[labels_cv_index])) * 100) for r in res_old]
+        # logger.info(res_cv)
+        # Singleton.set("Точность на валидации по ЦВ", f"{Singleton.get('Точность на валидации по ЦВ')}\n{[o[1] for o in res_cv]}")
+        # write(Singleton.text())
         #
         # Точность по НЕ ЦВ
-        labels_necv_index = [x for x in range(len(labels)) if labels[x] != cv_index]
-        logger.info(labels_necv_index)
-        logger.info(np.array(labels)[labels_necv_index])
-        res_necv = [(r[0], np.mean(
-            np.array(self.classifierWrapper.convert_result_log(r[1][labels_necv_index])) == self.classifierWrapper.convert_result_log(
-                np.array(labels)[labels_necv_index])) * 100) for r in res_old]
-        logger.info(res_necv)
-        Singleton.set("Точность на валидации по НЕ ЦВ", f"{Singleton.get('Точность на валидации по НЕ ЦВ')}\n{[o[1] for o in res_necv]}")
-        write(Singleton.text())
+        # labels_necv_index = [x for x in range(len(labels)) if labels[x] != cv_index]
+        # logger.info(labels_necv_index)
+        # logger.info(np.array(labels)[labels_necv_index])
+        # res_necv = [(r[0], np.mean(
+        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_necv_index])) == self.classifierWrapper.convert_result_log(
+        #         np.array(labels)[labels_necv_index])) * 100) for r in res_old]
+        # logger.info(res_necv)
+        # Singleton.set("Точность на валидации по НЕ ЦВ", f"{Singleton.get('Точность на валидации по НЕ ЦВ')}\n{[o[1] for o in res_necv]}")
+        # write(Singleton.text())
         #
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
