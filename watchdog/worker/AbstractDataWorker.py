@@ -98,7 +98,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
-    def predict_old(self, block): # устарело
+    def predict(self, block): # устарело
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
         # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
@@ -120,36 +120,36 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(selected_classifiers)
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
-    def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
-        # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
-        resK = self.kirClassifierWrapper.predict(block)
-        resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
-        print(f"K: {str(resK)}")
-        print(f"S: {str(resS)}")
-        res = np.concatenate((resS, resK), axis=None)
-        print(f"res before: {str(res)}")
-        selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
-
-        print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        print(res, 'before convert result')
-        # Вывод только классификатор Шепелева
-
-        print(f"res after: {res}")
-        print(f"selected_classifiers: {selected_classifiers}")
-        print(res)
-        print(selected_classifiers)
-
-        result_val = self.get_result(np.array([res[int(i)] for i in selected_classifiers])) # получение одного ответа
-        result_val = self.classifierWrapper.convert_result_log(np.atleast_1d(result_val)) # преобразование по группам
-        result_val = result_val[0]  # преобразование в int
-
-        res = self.classifierWrapper.convert_result_log(res)  # преобразование всех ответов по группам
-
-        logger.info(result_val)
-        logger.info(res)
-
-        return [result_val, res]
+    # def predict_ter(self, block): # не используется
+    #     selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
+    #     # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+    #     resK = self.kirClassifierWrapper.predict(block)
+    #     resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
+    #     print(f"K: {str(resK)}")
+    #     print(f"S: {str(resS)}")
+    #     res = np.concatenate((resS, resK), axis=None)
+    #     print(f"res before: {str(res)}")
+    #     selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
+    #
+    #     print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
+    #     print(res, 'before convert result')
+    #     # Вывод только классификатор Шепелева
+    #
+    #     print(f"res after: {res}")
+    #     print(f"selected_classifiers: {selected_classifiers}")
+    #     print(res)
+    #     print(selected_classifiers)
+    #
+    #     result_val = self.get_result(np.array([res[int(i)] for i in selected_classifiers]))  # получение одного ответа
+    #     result_val = self.classifierWrapper.convert_result_log(np.atleast_1d(result_val))  # преобразование по группам
+    #     result_val = result_val[0]  # преобразование в int
+    #
+    #     res = self.classifierWrapper.convert_result_log(res)  # преобразование всех ответов по группам
+    #
+    #     logger.info(result_val)
+    #     logger.info(res)
+    #
+    #     return [result_val, res]
 
     def get_result_old(self, res): # устарело
         x = pd.Series(res)
