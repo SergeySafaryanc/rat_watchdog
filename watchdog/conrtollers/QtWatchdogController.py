@@ -78,14 +78,24 @@ class QtWatchdogController(ExpFolder):
         self.resultsCounter += 1
         result, resСlassifiers = results
         message, color = odors[int(result)]
-        with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
-        # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), message]))
-            f.write('\n')
 
-        with open(os.path.join(self.exp_folder, name + '_responses_classifiers.csv'), 'a+') as f:
+        # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
+        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), message]))
+        #     f.write('\n')
+        # with open(os.path.join(self.exp_folder, name + '_result_labels.csv'), 'a+') as f:
+        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
+        #     f.write('\n')
+
+        # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
         # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers))]))
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message]))
+            f.write('\n')
+        # вывод ответов по всем классификаторам и предикта по комитету в виде меток
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result)]))
             f.write('\n')
 
         message = "%i. %s" % (self.resultsCounter, message)
