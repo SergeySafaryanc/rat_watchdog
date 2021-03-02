@@ -98,7 +98,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
-    def predict(self, block): # устарело
+    def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
         # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
@@ -209,7 +209,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
-        res_old = res  # для отчёта по ЦВ/НЕ ЦВ
+        # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
@@ -270,11 +270,11 @@ class AbstractDataWorker(QThread, ExpFolder):
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
 
-        answers_old = np.array(
-            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
-             range(len(res1[0]))])  # получение ответов по старой методике
-        val_res.append(np.array(answers_old))  # добавление ответов по старой методике в вывод
-        logger.info(val_res)
+        # answers_old = np.array(
+        #     [self.get_result_old(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
+        #      range(len(res1[0]))])  # получение ответов по старой методике
+        # val_res.append(np.array(answers_old))  # добавление ответов по старой методике в вывод
+        # logger.info(val_res)
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),

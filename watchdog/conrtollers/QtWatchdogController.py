@@ -127,8 +127,8 @@ class QtWatchdogController(ExpFolder):
 
     def resultValidation(self, results, label, name):
         result, resultList = results
-        errorColor = "#db3b21"
-        okColor = "#60f750"
+        errorColor = "#cccccc"  # "#db3b21"
+        okColor = "#cccccc"  # "#60f750"
         color = (okColor if result == label else errorColor)
         print()
         self.validationResult[0][result] += 1 if result == label else 0
