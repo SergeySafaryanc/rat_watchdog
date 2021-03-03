@@ -324,44 +324,69 @@ class AbstractDataWorker(QThread, ExpFolder):
     def continueWork(self):  # продолжение работы
         self.working = True
 
-    def select(self, val):
+    # def select(self, val):
+    #     # val - список или кортеж кортежей, где каждый внутренний кортеж соответствует одному классификатору и имеет
+    #     # следующий вид: (*индекс классификатора*, *исходная точность валидации классификатора*)
+    #
+    #     round_ = lambda x: int(5 * round(float(x) / 5))  # округление по нашему правилу
+    #     val = [(clf[0], clf[1], round_(clf[1])) for clf in val]  # добавление округленной точности
+    #     srt = sorted(val, key=lambda x: x[1], reverse=True)  # сортировка по не округленной точности
+    #     td = list(
+    #         filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов
+    #     if len(td) != 0:
+    #         if len(td) in (1, 2) and any(
+    #                 [td_[1] >= 80 for td_ in td]):  # если остался один (или 2), причем очень хороший, оставляем только его
+    #             logger.info(srt)  #
+    #             return sorted([td_[0] for td_ in td])
+    #         ranks = [(acc, list(clfs)) for (acc, clfs) in
+    #                  groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по
+    #         # округленным точностям
+    #         res = [clf[0] for clf in ranks[0][1]]  # сразу заносим в итоговый результат классификаторы из первого ранга
+    #         if len(res) >= 3:
+    #             return sorted(res)
+    #         else:
+    #             for rank in ranks[1:]:  # идем от второго ранга к худшим
+    #                 if rank[0] >= 70:  # если ранг не хуже 70%, берем все классификаторы в нем
+    #                     res += [clf[0] for clf in rank[1]]
+    #                 else:  # если ранг хуже 70%, добавляем из него по одному классификатору, пока не станет 3
+    #                     for k in range(len(rank[1])):
+    #                         res.append(rank[1][k][0])
+    #                         if len(res) >= 3:
+    #                             logger.info(res)  #
+    #                             return sorted(res)
+    #                 if len(res) >= 3:
+    #                     logger.info(res)  #
+    #                     return sorted(res)
+    #         logger.info(res)  #
+    #         if len(res) >= 1:  # костыль для того, чтоб не возвращать хорошие с плохими (лучше 1-2, чем 3 с плохим)
+    #             return sorted(res)  #
+    #     logger.info(srt)  #
+    #     return sorted([srt[i][0] for i in range(3)])
+
+    def select(self, val):  # VERSION 2 of 03 March 2021
         # val - список или кортеж кортежей, где каждый внутренний кортеж соответствует одному классификатору и имеет
         # следующий вид: (*индекс классификатора*, *исходная точность валидации классификатора*)
-
         round_ = lambda x: int(5 * round(float(x) / 5))  # округление по нашему правилу
         val = [(clf[0], clf[1], round_(clf[1])) for clf in val]  # добавление округленной точности
         srt = sorted(val, key=lambda x: x[1], reverse=True)  # сортировка по не округленной точности
         td = list(
-            filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов (точность < 50 %)
-        if len(td) != 0:
-            if len(td) in (1, 2) and any(
-                    [td_[1] >= 80 for td_ in td]):  # если остался один (или 2), причем очень хороший, оставляем только его
-                logger.info(srt)  #
-                return sorted([td_[0] for td_ in td])
+            filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов
+        if len(td) >= 3:  # если после отбрасывания осталось 3 и больше
             ranks = [(acc, list(clfs)) for (acc, clfs) in
-                     groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по
-            # округленным точностям
-            res = [clf[0] for clf in ranks[0][1]]  # сразу заносим в итоговый результат классификаторы из первого ранга
-            if len(res) >= 3:
-                return sorted(res)
-            else:
-                for rank in ranks[1:]:  # идем от второго ранга к худшим
-                    if rank[0] >= 70:  # если ранг не хуже 70%, берем все классификаторы в нем
-                        res += [clf[0] for clf in rank[1]]
-                    else:  # если ранг хуже 70%, добавляем из него по одному классификатору, пока не станет 3
-                        for k in range(len(rank[1])):
-                            res.append(rank[1][k][0])
-                            if len(res) >= 3:
-                                logger.info(res)  #
-                                return sorted(res)
-                    if len(res) >= 3:
-                        logger.info(res)  #
-                        return sorted(res)
+                     groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по округленным точностям
+            logger.info(ranks)  #
+            res = []  # инициализируем массив результата
             logger.info(res)  #
-            if len(res) >= 1:  # костыль для того, чтоб не возвращать хорошие с плохими (лучше 1-2, чем 3 с плохим)
-                return sorted(res)  #
-        logger.info(srt)  #
-        return sorted([srt[i][0] for i in range(3)])
+            for rank in ranks[0:]:  # набираем не менее 3 классификаторов по всем рангам последовательно по убыванию
+                res += [clf[0] for clf in rank[1]]  # заносим в итоговый результат все классификаторы из ранга
+                logger.info(res)  #
+                if len(res) >= 3:  # если уже 3 и больше
+                    return sorted(res)  # возвращаем
+        else:  # возвращаем самый худший для того, чтоб не пройти валидацию на этом обучении и учиться дальше
+            logger.info(srt)  #
+            srt = sorted(srt, key=lambda x: x[1])  # сортировка в порядке возрастания для возврата наименьшего
+            logger.info(srt)  #
+            return [srt[0][0]]  # возвращаем индекс первого (худшего)
 
     def select_ter(self, val):
         selected = self.select(val)  # выбранные классификаторы
@@ -371,11 +396,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         srt = sorted(selected,
                      key=lambda x: (-x[1], -x[0]))  # сортировка по убыванию точности и индекса (чтоб захватить Колины)
         logger.info(srt)
-        # if (srt[0][1] < acc_need_of_one_clf):  # проверка на то, что не все ниже 50
-        #     srt = [srt[0]]  # если все ниже 50, берём один
-        # else:  # если нет
-        #     srt = list(filter(lambda x: x if x[1] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов (точность < 50 %)
-        #     logger.info(srt)
         if (len(srt) > 3):  # если больше 3 вернул select
             logger.info("len(srt)>3")
             for clf in srt[:3]:  # ищем LDA или SLP
