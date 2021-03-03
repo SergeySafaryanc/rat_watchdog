@@ -332,10 +332,10 @@ class AbstractDataWorker(QThread, ExpFolder):
         val = [(clf[0], clf[1], round_(clf[1])) for clf in val]  # добавление округленной точности
         srt = sorted(val, key=lambda x: x[1], reverse=True)  # сортировка по не округленной точности
         td = list(
-            filter(lambda x: x if x[2] > 50 else None, srt))  # отбрасывание плохих классификаторов (точность < 55 %)
+            filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов (точность < 50 %)
         if len(td) != 0:
             if len(td) in (1, 2) and any(
-                    [td_[1] >= 80 for td_ in td]):  # если остался один, причем очень хороший, оставляем только его
+                    [td_[1] >= 80 for td_ in td]):  # если остался один (или 2), причем очень хороший, оставляем только его
                 logger.info(srt)  #
                 return sorted([td_[0] for td_ in td])
             ranks = [(acc, list(clfs)) for (acc, clfs) in
@@ -352,11 +352,14 @@ class AbstractDataWorker(QThread, ExpFolder):
                         for k in range(len(rank[1])):
                             res.append(rank[1][k][0])
                             if len(res) >= 3:
-                                logger.info(srt)  #
+                                logger.info(res)  #
                                 return sorted(res)
                     if len(res) >= 3:
-                        logger.info(srt)  #
+                        logger.info(res)  #
                         return sorted(res)
+            logger.info(res)  #
+            if len(res) >= 1:  # костыль для того, чтоб не возвращать хорошие с плохими (лучше 1-2, чем 3 с плохим)
+                return sorted(res)  #
         logger.info(srt)  #
         return sorted([srt[i][0] for i in range(3)])
 
@@ -368,12 +371,17 @@ class AbstractDataWorker(QThread, ExpFolder):
         srt = sorted(selected,
                      key=lambda x: (-x[1], -x[0]))  # сортировка по убыванию точности и индекса (чтоб захватить Колины)
         logger.info(srt)
+        # if (srt[0][1] < acc_need_of_one_clf):  # проверка на то, что не все ниже 50
+        #     srt = [srt[0]]  # если все ниже 50, берём один
+        # else:  # если нет
+        #     srt = list(filter(lambda x: x if x[1] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов (точность < 50 %)
+        #     logger.info(srt)
         if (len(srt) > 3):  # если больше 3 вернул select
             logger.info("len(srt)>3")
             for clf in srt[:3]:  # ищем LDA или SLP
                 logger.info(clf)
                 if (clf[0]) == 7 or (clf[0]) == 6:  # если LDA или SLP
-                    srt = srt[:4]  # берём ещё один Шепелевский
+                    srt = srt[:4]  # берём ещё один классификатор
                     break
             else:
                 srt = srt[:3]
