@@ -206,8 +206,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         labels = [label for label in labels if label != 64]
         logger.info(labels)
         labels = [labels_map[l] for l in labels][-len(res[0][1]):]
-        logger.info(labels)
-        val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
         # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
 
@@ -264,6 +262,10 @@ class AbstractDataWorker(QThread, ExpFolder):
         answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
         logger.info(answers)  #
         val_res.append(np.array(answers))  # добавление ответов в вывод
+
+        logger.info(labels)
+        val_res.append(np.array(labels))  # добавление реальных меток в вывод
+
         logger.info(self.classifierWrapper.convert_result_log(answers))  #
         logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels)))  #
