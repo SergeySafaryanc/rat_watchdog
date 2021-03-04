@@ -370,7 +370,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         val = [(clf[0], clf[1], round_(clf[1])) for clf in val]  # добавление округленной точности
         srt = sorted(val, key=lambda x: x[1], reverse=True)  # сортировка по не округленной точности
         td = list(
-            filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов
+            filter(lambda x: x if x[1] >= acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов
         if len(td) >= 3:  # если после отбрасывания осталось 3 и больше
             ranks = [(acc, list(clfs)) for (acc, clfs) in
                      groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по округленным точностям
