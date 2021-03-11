@@ -101,8 +101,11 @@ class AbstractDataWorker(QThread, ExpFolder):
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
         # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+        logger.info("some")
         resK = self.kirClassifierWrapper.predict(block)
+        logger.info("some")
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
+        logger.info("some")
         print(f"K: {str(resK)}")
         print(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
@@ -384,6 +387,8 @@ class AbstractDataWorker(QThread, ExpFolder):
                 logger.info(res)  #
                 if len(res) >= 3:  # если уже 3 и больше
                     return sorted(res)  # возвращаем
+            # logger.info(res)  #
+            # return sorted(res)  # возвращаем хотя бы 2
         else:  # возвращаем самый худший для того, чтоб не пройти валидацию на этом обучении и учиться дальше
             logger.info(srt)  #
             srt = sorted(srt, key=lambda x: x[1])  # сортировка в порядке возрастания для возврата наименьшего

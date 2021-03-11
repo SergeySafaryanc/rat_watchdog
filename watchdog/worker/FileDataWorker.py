@@ -48,16 +48,15 @@ class FileDataWorker(AbstractDataWorker):
 
                 size_read = data.shape[0]
 
-                if (data[self.last_label_index:].shape[0] < clapan_length) or (
-                        data[:self.last_label_index].shape[0] < prestimul_length):
-                    continue
-
-                block = np.copy(
-                    data[self.last_label_index - prestimul_length:self.last_label_index + clapan_length])
-
-                self.label_index_list.append(self.last_label_index)
-
                 if self.train_flag:
+                    if (data[self.last_label_index:].shape[0] < clapan_length) or (
+                            data[:self.last_label_index].shape[0] < prestimul_length):
+                        continue
+
+                    # block = np.copy(
+                    #     data[self.last_label_index - prestimul_length:self.last_label_index + clapan_length])
+
+                    self.label_index_list.append(self.last_label_index)
                     self.resultTrain.emit(self.counter, labels_map[label])
                     self.counter += 1
                     if self.counter == num_counter_for_refresh_animal:
@@ -69,11 +68,30 @@ class FileDataWorker(AbstractDataWorker):
                     if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                         self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                 else:
+                    #тест который мы заслужили
+
+                    if (data.shape[0] < clapan_length + prestimul_length):
+                        logger.info(data.shape)
+                        continue
+
+                    block = np.copy(data[-(clapan_length+prestimul_length):])
+                    logger.info(block.shape)
+                    # zz = block[0][2]
+
+                    #
                     if self.is_test_started:
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
+                    # logger.info("before predict")
+                    logger.info(self.predict(block))
+                    logger.info("after predict")
+                    label = 1  # костыль
+                    # logger.info(label)
+                    # logger.info(labels_map[label])
+                    # logger.info(self.classifierWrapper.convert_result(labels_map[label]))
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
                                          self.classifierWrapper.convert_result(labels_map[label]))
+                    logger.info("get result")
                     self.counter += 1
                     if self.counter == 75:  # количество подач на тест
                         self.stop()

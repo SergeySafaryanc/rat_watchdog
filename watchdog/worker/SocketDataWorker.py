@@ -1,8 +1,8 @@
 import math
 import os
-
 import numpy as np
 
+from loguru import logger
 from configs.watchdog_config import *
 import socket
 
@@ -81,6 +81,10 @@ class SocketDataWorker(AbstractDataWorker):
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:
+                        logger.info(self.predict(block))
+                        logger.info(label)
+                        logger.info(labels_map[label])
+                        logger.info(self.classifierWrapper.convert_result(labels_map[label]))
                         self.resultTest.emit(self.time_now, self.counter, self.predict(block),
                                              self.classifierWrapper.convert_result(labels_map[label]))
                         self.counter += 1
