@@ -74,9 +74,45 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
+    # def onResultTest(self, name, i, results, label):
+    #     self.resultsCounter += 1
+    #     result, resСlassifiers = results
+    #     message, color = odors[int(result)]
+    #
+    #     # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
+    #     # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+    #     #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), message]))
+    #     #     f.write('\n')
+    #     # with open(os.path.join(self.exp_folder, name + '_result_labels.csv'), 'a+') as f:
+    #     # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+    #     #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
+    #     #     f.write('\n')
+    #
+    #     # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
+    #     with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
+    #     # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
+    #         f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message]))
+    #         f.write('\n')
+    #     # вывод ответов по всем классификаторам и предикта по комитету в виде меток
+    #     with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+    #         f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result)]))
+    #         f.write('\n')
+    #
+    #     message = "%i. %s" % (self.resultsCounter, message)
+    #
+    #     if is_result_validation:
+    #         color = self.resultValidation(results, label, name)
+    #
+    #     self.gui.mainWindow.showMessage(message, "background: %s" % color)
+    #     self.gui.mainWindow.addResultListItem(message, color)
+    #
+    #     message, color = result_messages[0]
+    #
+    #     self.gui.mainWindow.showMessage(message, "background: %s" % color, show_result_delay * 1000)
+
     def onResultTest(self, name, i, results, label):
-        self.resultsCounter += 1
-        result, resСlassifiers = results
+        self.resultsCounter = 0
+        result, resClassifiers = results
         message, color = odors[int(result)]
 
         # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
@@ -91,12 +127,44 @@ class QtWatchdogController(ExpFolder):
         # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
         # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message]))
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resClassifiers)), message]))
             f.write('\n')
         # вывод ответов по всем классификаторам и предикта по комитету в виде меток
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result)]))
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resClassifiers)), str(result)]))
             f.write('\n')
+
+    def onResultTestFinal(self, name, i, prediction_set, label):
+        results = prediction_set[2]  # берём на лог третий элемент
+        self.resultsCounter = i
+        result, resClassifiers = results
+        message, color = odors[int(result)]
+
+        # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
+        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), message]))
+        #     f.write('\n')
+        # with open(os.path.join(self.exp_folder, name + '_result_labels.csv'), 'a+') as f:
+        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
+        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
+        #     f.write('\n')
+
+        # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
+        # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resClassifiers)), message]))
+            f.write('\n')
+        # вывод ответов по всем классификаторам и предикта по комитету в виде меток
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resClassifiers)), str(result)]))
+            f.write('\n')
+
+        prediction_set = [i[0] for i in prediction_set]
+        if (prediction_set.count(labels_map[target_clapan]) >= 2):  # если ЦВ больше или равно двух раз
+            message, color = odors[int(labels_map[target_clapan])]  # выбираем ЦВ
+        else:  # выбираем не ЦВ
+            prediction_set = [i for i in prediction_set if i != 0]
+            message, color = odors[int(prediction_set[0])]
 
         message = "%i. %s" % (self.resultsCounter, message)
 
@@ -182,6 +250,7 @@ class QtWatchdogController(ExpFolder):
         worker.tick.connect(self.onTick)
         worker.tickViewSig.connect(self.onTickViewSig)
         worker.resultTest.connect(self.onResultTest)
+        worker.resultTestFinal.connect(self.onResultTestFinal)
         worker.resultTrain.connect(self.onResultTrain)
         worker.sendMessage.connect(self.sendMessage)
 

@@ -63,6 +63,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
     resultTest = pyqtSignal(str, int, object, int)
+    resultTestFinal = pyqtSignal(str, int, object, int)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
@@ -81,7 +82,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
-        self.counter = 0
+        self.counter = 1
         self.decimate_rate = decimate_rate
         self.sampling_rate = sampling_rate
         # индекс последней метки
@@ -101,11 +102,8 @@ class AbstractDataWorker(QThread, ExpFolder):
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
         # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
-        logger.info("some")
         resK = self.kirClassifierWrapper.predict(block)
-        logger.info("some")
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
-        logger.info("some")
         print(f"K: {str(resK)}")
         print(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
@@ -154,20 +152,20 @@ class AbstractDataWorker(QThread, ExpFolder):
     #
     #     return [result_val, res]
 
-    def get_result_old(self, res): # устарело
-        x = pd.Series(res)
-        logger.info(x)
-        x = x.value_counts()
-        logger.info(x)
-        ind = x[x == x.max()].index
-        logger.info(ind)
-        if len(ind) > 1:
-            if 1 in ind:
-                return 1
-            else:
-                return 0
-        else:
-            return ind[0]
+    # def get_result_old(self, res):  # устарело
+    #     x = pd.Series(res)
+    #     logger.info(x)
+    #     x = x.value_counts()
+    #     logger.info(x)
+    #     ind = x[x == x.max()].index
+    #     logger.info(ind)
+    #     if len(ind) > 1:
+    #         if 1 in ind:
+    #             return 1
+    #         else:
+    #             return 0
+    #     else:
+    #         return ind[0]
 
     def get_result(self, res):
         x = pd.Series(res)
