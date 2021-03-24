@@ -40,16 +40,16 @@ class ClassifierWrapper:
     def train(self, file_name):
         return train(file_name, self.num_channels, self.odors, [], self.decimate)
 
-    def convert_result(self, label):
-        for j in range(len(self.unite_test)):
-            if int(label) in self.unite_test[j]:
-                return j
-
-    def convert_result_log(self, res):
-        result = []
-        for i in range(len(res)):
-            for j in range(len(self.unite)):
-                if res[i] in self.unite[j]:
-                    result.append(j)
-        print(f"ClassifierWrapper.py: result: {result}")
-        return result
+    # def convert_result(self, label):
+    #     for j in range(len(self.unite_test)):
+    #         if int(label) in self.unite_test[j]:
+    #             return j
+    #
+    # def convert_result_log(self, res):
+    #     result = []
+    #     for i in range(len(res)):
+    #         for j in range(len(self.unite)):
+    #             if res[i] in self.unite[j]:
+    #                 result.append(j)
+    #     print(f"ClassifierWrapper.py: result: {result}")
+    #     return result

@@ -98,26 +98,43 @@ class AbstractDataWorker(QThread, ExpFolder):
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
+    # def predict(self, block):
+    #     selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
+    #     # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+    #     resK = self.kirClassifierWrapper.predict(block)
+    #     resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
+    #     print(f"K: {str(resK)}")
+    #     print(f"S: {str(resS)}")
+    #     res = np.concatenate((resS, resK), axis=None)
+    #     print(f"res before: {str(res)}")
+    #     selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
+    #
+    #     print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
+    #     print(res, 'before convert result')
+    #     res = self.classifierWrapper.convert_result_log(res)
+    #     # Вывод только классификатор Шепелева
+    #
+    #     print(f"res after: {res}")
+    #     print(f"selected_classifiers: {selected_classifiers}")
+    #     print(res)
+    #     print(selected_classifiers)
+    #     return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
+
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
-        # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
-        print(f"K: {str(resK)}")
-        print(f"S: {str(resS)}")
+
+        logger.info(f"K: {str(resK)}")
+        logger.info(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
-        print(f"res before: {str(res)}")
+        logger.info(f"K+S: {str(res)}")
+
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
+        logger.info(f"selected_classifiers: {selected_classifiers}")
 
-        print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        print(res, 'before convert result')
-        res = self.classifierWrapper.convert_result_log(res)
-        # Вывод только классификатор Шепелева
-
-        print(f"res after: {res}")
-        print(f"selected_classifiers: {selected_classifiers}")
-        print(res)
-        print(selected_classifiers)
+        logger.info(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     # def predict_ter(self, block): # не используется
@@ -151,42 +168,43 @@ class AbstractDataWorker(QThread, ExpFolder):
     #
     #     return [result_val, res]
 
-    def get_result_old(self, res):  # устарело
-        x = pd.Series(res)
-        logger.info(x)
-        x = x.value_counts()
-        logger.info(x)
-        ind = x[x == x.max()].index
-        logger.info(ind)
-        if len(ind) > 1:
-            if 1 in ind:
-                return 1
-            else:
-                return 0
-        else:
-            return ind[0]
-
-    def get_result(self, res):
-        x = pd.Series(res)
-        logger.info(x)
-        x = x.value_counts()
-        logger.info(x)
-        x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
-        logger.info(x)
-        ind = x[x == x.max()].index
-        logger.info(ind)
-        return ind[0]
+    # def get_result_old(self, res):  # устарело
+    #     x = pd.Series(res)
+    #     logger.info(x)
+    #     x = x.value_counts()
+    #     logger.info(x)
+    #     ind = x[x == x.max()].index
+    #     logger.info(ind)
+    #     if len(ind) > 1:
+    #         if 1 in ind:
+    #             return 1
+    #         else:
+    #             return 0
+    #     else:
+    #         return ind[0]
+    #
+    # def get_result(self, res):
+    #     x = pd.Series(res)
+    #     logger.info(x)
+    #     x = x.value_counts()
+    #     logger.info(x)
+    #     x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+    #     logger.info(x)
+    #     ind = x[x == x.max()].index
+    #     logger.info(ind)
+    #     return ind[0]
 
     def get_result_detect(self, res):
         x = pd.Series(res)
         logger.info(x)
         x = x.value_counts()
         logger.info(x)
-        x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
-        logger.info(x)
         ind = x[x == x.max()].index
         logger.info(ind)
-        return ind[0]
+        if (x[ind[0]] == len(res)):
+            return 0
+        else:
+            return 1
 
     def corrcoef_between_channels(self, data):
         return [abs(np.corrcoef((data[:, pair[0]], data[:, pair[1]]))[0][1]) for pair in
@@ -218,45 +236,16 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         labels = [labels_map[l] for l in labels][-len(res[0][1]):]
 
-        # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
-
-        res = [(r[0], np.mean(
-            np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
-                labels)) * 100) for r in res]
+        res = [(r[0], np.mean(np.array(r[1]) == labels) * 100) for r in res]
         logger.info(res)
 
-        print(self.record.shape)
-        print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
+        logger.info(self.record.shape)
+        logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
         write(Singleton.text())
-        # readme([i[1] for i in res])
-        # Точность по ЦВ
-        # cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
-        # labels_cv_index = [x for x in range(len(labels)) if labels[x] == cv_index]
-        # logger.info(labels_cv_index)
-        # logger.info(np.array(labels)[labels_cv_index])
-        # res_cv = [(r[0], np.mean(
-        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_cv_index])) == self.classifierWrapper.convert_result_log(
-        #         np.array(labels)[labels_cv_index])) * 100) for r in res_old]
-        # logger.info(res_cv)
-        # Singleton.set("Точность на валидации по ЦВ", f"{Singleton.get('Точность на валидации по ЦВ')}\n{[o[1] for o in res_cv]}")
-        # write(Singleton.text())
-        #
-        # Точность по НЕ ЦВ
-        # labels_necv_index = [x for x in range(len(labels)) if labels[x] != cv_index]
-        # logger.info(labels_necv_index)
-        # logger.info(np.array(labels)[labels_necv_index])
-        # res_necv = [(r[0], np.mean(
-        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_necv_index])) == self.classifierWrapper.convert_result_log(
-        #         np.array(labels)[labels_necv_index])) * 100) for r in res_old]
-        # logger.info(res_necv)
-        # Singleton.set("Точность на валидации по НЕ ЦВ", f"{Singleton.get('Точность на валидации по НЕ ЦВ')}\n{[o[1] for o in res_necv]}")
-        # write(Singleton.text())
-        #
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
-        # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select_ter(res)
         logger.info(selected_classifiers)  #
         np.savetxt(str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_selected_classifiers.csv")),
@@ -265,29 +254,21 @@ class AbstractDataWorker(QThread, ExpFolder):
                    delimiter=",")
         np.savetxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), np.array(selected_classifiers),
                    delimiter=",")
-        # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
         logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
         answers = np.array(
             [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
-        answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
+        # answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
         logger.info(answers)  #
         val_res.append(np.array(answers))  # добавление ответов в вывод
 
-        logger.info(labels)
-        val_res.append(np.array(labels))  # добавление реальных меток в вывод
+        # logger.info(labels)
+        # val_res.append(np.array(labels))  # добавление реальных меток в вывод
+        # logger.info(np.array(answers) == np.array(labels))  #
 
-        logger.info(self.classifierWrapper.convert_result_log(answers))  #
-        logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            self.classifierWrapper.convert_result_log(labels)))  #
-        accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            self.classifierWrapper.convert_result_log(labels))) * 100
-
-        # answers_old = np.array(
-        #     [self.get_result_old(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
-        #      range(len(res1[0]))])  # получение ответов по старой методике
-        # val_res.append(np.array(answers_old))  # добавление ответов по старой методике в вывод
-        # logger.info(val_res)
+        # ответы должны быть 0 (нулями), так как 0 соответствует ЦВ
+        logger.info(np.array(answers) == np.array(np.zeros(len(answers))))  #
+        accuracy = np.mean(np.array(answers) == np.array(np.zeros(len(answers)))) * 100  # считаем точность на комитете
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),

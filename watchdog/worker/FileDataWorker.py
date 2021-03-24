@@ -18,7 +18,7 @@ class FileDataWorker(AbstractDataWorker):
         logger.info(f"f_name = {self.f_name}\tname = {self.name}\tepoch_time = {self.epoch_time}")
 
     def run(self):
-        find_label = True
+        # find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
             odor_labels_set = set(odors_set)
             size_read = 0
@@ -58,7 +58,8 @@ class FileDataWorker(AbstractDataWorker):
                 self.label_index_list.append(self.last_label_index)
 
                 if self.train_flag:
-                    self.resultTrain.emit(self.counter, labels_map[label])
+                    # self.resultTrain.emit(self.counter, labels_map[label])
+                    self.resultTrain.emit(self.counter, label)
                     self.counter += 1
                     if self.counter == num_counter_for_refresh_animal:
                         self.stop()
@@ -72,8 +73,9 @@ class FileDataWorker(AbstractDataWorker):
                     if self.is_test_started:
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
-                    self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(labels_map[label]))
+                    # self.resultTest.emit(self.name, self.counter, self.predict(block),
+                    #                      self.classifierWrapper.convert_result(labels_map[label]))
+                    self.resultTest.emit(self.name, self.counter, self.predict(block), label)
                     self.counter += 1
                     if self.counter == 75:  # количество подач на тест
                         self.stop()
