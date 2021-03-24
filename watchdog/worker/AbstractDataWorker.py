@@ -151,7 +151,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     #
     #     return [result_val, res]
 
-    def get_result_old(self, res): # устарело
+    def get_result_old(self, res):  # устарело
         x = pd.Series(res)
         logger.info(x)
         x = x.value_counts()
@@ -167,6 +167,17 @@ class AbstractDataWorker(QThread, ExpFolder):
             return ind[0]
 
     def get_result(self, res):
+        x = pd.Series(res)
+        logger.info(x)
+        x = x.value_counts()
+        logger.info(x)
+        x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+        logger.info(x)
+        ind = x[x == x.max()].index
+        logger.info(ind)
+        return ind[0]
+
+    def get_result_detect(self, res):
         x = pd.Series(res)
         logger.info(x)
         x = x.value_counts()
