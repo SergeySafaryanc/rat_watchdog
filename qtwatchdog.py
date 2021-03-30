@@ -25,6 +25,7 @@ def clearLogs():
 
 
 if __name__ == "__main__":
+    print(is_train)
     if is_train:
         clearLogs()
     controller = QtWatchdogController()

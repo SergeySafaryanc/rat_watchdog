@@ -106,3 +106,6 @@ class PlotWindow(BaseWindow):
     def addHLine(self, value=None, index=None):
         value = value if value else self.data[-1]
         return self.__addHVLines(index, self.hlines, value)
+
+    # def __validate(self):
+    #     c = Config(file=config_file, is_refresh=True)

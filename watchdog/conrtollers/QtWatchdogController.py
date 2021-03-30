@@ -65,14 +65,16 @@ class QtWatchdogController(ExpFolder):
 
         dataCorrNP = np.array(self.dataCorr)
         dataBRNP = np.array(self.dataBR)
-        self.gui.plotWindow.addPoint(dataCorrNP, dataBRNP)
+        self.gui.mainWindow.addPoint(dataCorrNP, dataBRNP)
+        # self.gui.plotWindow.addPoint(dataCorrNP, dataBRNP)
         np.save(os.path.join(self.exp_folder, 'correlations'), dataCorrNP)
         # np.save(os.path.join(out_path, 'correlations'), dataCorrNP)
         np.save(os.path.join(self.exp_folder, 'breathing_rate'), dataBRNP)
         # np.save(os.path.join(out_path, 'breathing_rate'), dataBRNP)
 
     def onTickViewSig(self, sig):
-        self.gui.plotWindow.addPointSig(sig)
+        self.gui.mainWindow.addPointSig(sig)
+        # self.gui.plotWindow.addPointSig(sig)
 
     def onResultTest(self, name, i, results, label):
         self.resultsCounter += 1
@@ -129,7 +131,8 @@ class QtWatchdogController(ExpFolder):
             self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
 
     def sendMessage(self, message):
-        self.gui.mainWindow.showMessage(message, "background: #CCC")
+        self.gui.mainWindow.showResult(message)
+        # self.gui.mainWindow.showMessage(message, "background: #CCC")
         # try:
         #     vk_bot.send_message(message)
         # except Exception as e:

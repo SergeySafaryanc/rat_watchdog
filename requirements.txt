@@ -22,3 +22,5 @@ tqdm==4.41.0
 
 vk_api==11.9.0
 loguru~=0.5.3
+pydantic~=1.8.1
+requests~=2.25.1
