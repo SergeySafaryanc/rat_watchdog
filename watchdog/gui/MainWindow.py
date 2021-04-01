@@ -100,9 +100,8 @@ class MainWindow(BaseWindow):
         self.formLayout.addRow("Train step", self.train_step)
         self.formLayout.addRow("Is File", self.data_source_is_file)
         self.formLayout.addRow("Is Train", self.is_train)
-        self.formLayout.addRow("Is Train", self.is_train)
 
-        self.r0c1 = QLabel("Material")
+        self.r0c1 = QLabel("Agent")
         self.r0c2 = QLabel("Weight")
         r0 = QtWidgets.QHBoxLayout()
         r0.addWidget(self.r0c1)
@@ -288,10 +287,10 @@ class MainWindow(BaseWindow):
                 [self.r4c1.text(), "#ffff00"],
                 [self.r5c1.text(), "#ffff00"],
             ],
-            "odors_set": [1, 2, 4, 8],
+            "odors_set": [1, 2, 4, 8, 16],
             "weights": [float(self.r1c2.text()), float(self.r2c2.text()), float(self.r3c2.text()), float(self.r4c2.text()), float(self.r5c2.text())],
-            "unite": [[1], [2], [3], [4]],
-            "unite_test": [[1], [2], [3], [4]],
+            "unite": [[0], [1], [2], [3], [4]],
+            "unite_test": [[0], [1], [2], [3], [4]],
             "rat_name": self.rat_name.text()
         }
         Config(config_file, True, **current_setting)

@@ -1,5 +1,5 @@
 from configs.json_parser_configuration import Config
-config_file = "/home/quantum/Documents/watchdog_files/inp/config.json"
+config_file = "/home/quantum/PycharmProjects/rat_watchdog_novosib/config.json"
 config = Config(file=config_file)
 
 # Socket conf
