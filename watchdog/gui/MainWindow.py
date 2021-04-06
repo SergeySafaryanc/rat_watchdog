@@ -276,9 +276,9 @@ class MainWindow(BaseWindow):
             "num_counter_for_refresh_animal": int(self.num_counter_for_refresh_animal.text()),
             "count_train_stimuls": int(self.count_train_stimuls.text()),
             "train_step": int(self.train_step.text()),
-            "data_source_is_file": True,
+            "data_source_is_file": bool(self.data_source_is_file.isChecked()),
             "is_result_validation": True,
-            "is_train": True,
+            "is_train": bool(self.is_train.isChecked()),
             "use_auto_train": True,
             "odors": [
                 [self.r1c1.text(), "#ffff00"],
