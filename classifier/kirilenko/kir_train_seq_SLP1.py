@@ -226,13 +226,14 @@ def slope_original_signal(data):
     train_classes = np.sort(np.asarray(sum(mixture_groups, [])))
     usd_train_samples = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==usd_class_it)[0] for usd_class_it in train_classes]))
     raw_train_dataset = raw_train_dataset[usd_train_samples,:]
+    raw_labels = np.copy(raw_train_dataset[:,-1])
     for train_group_it in range(len(mixture_groups)):
         train_group = mixture_groups[train_group_it]
         idxs_of_train_group = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==clapan_it)[0] for clapan_it in train_group]))
         for sample in idxs_of_train_group:
-            raw_train_dataset[sample,-1]= train_group_it+1
+            raw_labels [sample]= train_group_it+1
     train_features = raw_train_dataset[:,:-1]
-    train_labels = raw_train_dataset[:,-1]
+    train_labels = raw_labels
     clf7 = GradientBoostingClassifier(loss='deviance', learning_rate=0.012,n_estimators=50,subsample=0.2,criterion='friedman_mse',min_samples_split=3,max_depth=3,random_state=42)
     clf7.fit(train_features,train_labels)
     model_filename = r'pretrained_model_SLP-ORS.mdl'
@@ -251,13 +252,14 @@ def slope_original_signal_val_last(data):
     train_classes = np.sort(np.asarray(sum(mixture_groups, [])))
     usd_train_samples = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==usd_class_it)[0] for usd_class_it in train_classes]))
     raw_train_dataset = raw_train_dataset[usd_train_samples,:]
+    raw_labels = np.copy(raw_train_dataset[:,-1])
     for train_group_it in range(len(mixture_groups)):
         train_group = mixture_groups[train_group_it]
         idxs_of_train_group = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==clapan_it)[0] for clapan_it in train_group]))
         for sample in idxs_of_train_group:
-            raw_train_dataset[sample,-1]= train_group_it+1
+            raw_labels [sample]= train_group_it+1
     all_features = raw_train_dataset[:,:-1]
-    all_labels = raw_train_dataset[:,-1]
+    all_labels = raw_labels
     test_num = int(np.round(all_labels.shape[0] * test_procent))
     train_num = all_labels.shape[0] - test_num
     train_features = all_features[:train_num, :]
@@ -268,7 +270,6 @@ def slope_original_signal_val_last(data):
                                       criterion='friedman_mse', min_samples_split=3, max_depth=3, random_state=42)
     clf8.fit(train_features, train_labels)
     sc = clf8.predict(val_features).astype(int)
-    sc -= 1
     return (6, sc)
 
 
