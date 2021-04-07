@@ -5,6 +5,8 @@ from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep
 import numpy as np
 
+from loguru import logger
+from itertools import chain
 
 class FileDataWorker(AbstractDataWorker):
     def __init__(self, f_name, name, bytes_to_read, epoch_time, decimate_rate, channel_pairs, train_flag):
@@ -20,7 +22,7 @@ class FileDataWorker(AbstractDataWorker):
     def run(self):
         find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
-            odor_labels_set = set(odors_set)
+            odor_labels_set = set(list(chain(*odors_set)))  # groupcom
             size_read = 0
             while True:
                 if not self.working:
@@ -50,6 +52,9 @@ class FileDataWorker(AbstractDataWorker):
 
                 if (data[self.last_label_index:].shape[0] < clapan_length) or (
                         data[:self.last_label_index].shape[0] < prestimul_length):
+                    # logger.info(self.last_label_index)
+                    # logger.info(data[self.last_label_index:].shape[0])
+                    # logger.info(data.shape[0])
                     continue
 
                 block = np.copy(
@@ -58,7 +63,7 @@ class FileDataWorker(AbstractDataWorker):
                 self.label_index_list.append(self.last_label_index)
 
                 if self.train_flag:
-                    self.resultTrain.emit(self.counter, labels_map[label])
+                    self.resultTrain.emit(self.counter, self.labels_map[label])
                     self.counter += 1
                     if self.counter == num_counter_for_refresh_animal:
                         self.stop()
@@ -73,7 +78,7 @@ class FileDataWorker(AbstractDataWorker):
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(labels_map[label]))
+                                         self.classifierWrapper.convert_result(self.labels_map[label]))
                     self.counter += 1
                     if self.counter == 75:  # количество подач на тест
                         self.stop()

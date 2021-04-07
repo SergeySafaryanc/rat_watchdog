@@ -9,6 +9,8 @@ import socket
 from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
+from loguru import logger
+from itertools import chain
 
 class SocketDataWorker(AbstractDataWorker):
 
@@ -23,7 +25,7 @@ class SocketDataWorker(AbstractDataWorker):
         self.working = True
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            odor_labels_set = set(odors_set)
+            odor_labels_set = set(list(chain(*odors_set)))  # groupcom
             s.bind((HOST, PORT))
             s.listen()
             conn, addr = s.accept()
@@ -32,7 +34,7 @@ class SocketDataWorker(AbstractDataWorker):
             data = np.array([]).reshape(-1, num_channels)
 
             with conn:
-                print('Connected by', addr)
+                logger.info('Connected by', addr)
                 while self.working:
                     buffer = np.frombuffer(conn.recv(self.bytes_to_read, socket.MSG_WAITALL), 'i2').reshape(
                         (-1, self.socket_num_channels))
@@ -71,7 +73,7 @@ class SocketDataWorker(AbstractDataWorker):
                     self.label_index_list.append(self.last_label_index)
 
                     if is_train:
-                        self.resultTrain.emit(self.counter, labels_map[label])
+                        self.resultTrain.emit(self.counter, self.labels_map[label])
                         self.counter += 1
                         if self.counter == num_counter_for_refresh_animal:
                             self.stop()
@@ -82,7 +84,7 @@ class SocketDataWorker(AbstractDataWorker):
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:
                         self.resultTest.emit(self.time_now, self.counter, self.predict(block),
-                                             self.classifierWrapper.convert_result(labels_map[label]))
+                                             self.classifierWrapper.convert_result(self.labels_map[label]))
                         self.counter += 1
 
 

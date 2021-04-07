@@ -11,14 +11,16 @@ from itertools import combinations
 
 from watchdog.utils.readme import Singleton
 from watchdog.worker.SocketDataWorker import SocketDataWorker
+
 from loguru import logger
+from itertools import chain
 
 
 class QtWatchdogController(ExpFolder):
     def __init__(self):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
-        Singleton.set("Метки веществ", dict(zip(odors_set, [i[0] for i in odors])))
+        Singleton.set("Метки веществ", dict(zip([str(i) for i in odors_set], [i[0] for i in odors])))
 
         super().__init__()
         self.channel_pairs = list(combinations(np.arange(0, num_of_channels), 2))
@@ -35,6 +37,7 @@ class QtWatchdogController(ExpFolder):
             self.dataCorr = np.load(os.path.join(self.exp_folder, 'correlations.npy')).tolist()
         if os.path.exists(os.path.join(self.exp_folder, 'breathing_rate.npy')):
             self.dataBR = np.load(os.path.join(self.exp_folder, 'breathing_rate.npy')).tolist()
+
 
         # if os.path.exists(os.path.join(out_path, 'correlations.npy')):
         #     self.dataCorr = np.load(os.path.join(out_path, 'correlations.npy')).tolist()
@@ -111,10 +114,12 @@ class QtWatchdogController(ExpFolder):
         self.gui.mainWindow.showMessage(message, "background: %s" % color, show_result_delay * 1000)
 
     def onResultTrain(self, i, label):
+        logger.info(label)
         self.resultsCounter += 1
 
         if self.workers['main_thread'] == True:
             message = "%i. %s" % (self.resultsCounter, label)
+            # message = "%i. %s" % (self.resultsCounter, odors[label][0])
 
             self.gui.mainWindow.showMessage(message, "background: %s" % result_messages[0][1])
             self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
@@ -124,6 +129,7 @@ class QtWatchdogController(ExpFolder):
             self.gui.mainWindow.showMessage(message, "background: %s" % color, show_result_delay * 1000)
         else:
             message = "%i. %s" % (self.resultsCounter, label)
+            # message = "%i. %s" % (self.resultsCounter, odors[label][0])
 
             self.gui.mainWindow.showMessage(message, "background: %s" % result_messages[0][1])
             self.gui.mainWindow.addResultListItem(message, result_messages[0][1])
@@ -143,8 +149,8 @@ class QtWatchdogController(ExpFolder):
         print()
         self.validationResult[0][result] += 1 if result == label else 0
         self.validationResult[1][resultList[-1]] += 1 if resultList[-1] == label else 0
-        print(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
-        print(f"Odors: {odors}")
+        logger.info(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
+        logger.info(f"Odors: {odors}")
         with open(os.path.join(self.exp_folder, name + '_validation_result.csv'), 'w') as f:
         # with open(os.path.join(out_path, name + '_validation_result.csv'), 'w') as f:
             f.write(';'.join(map(lambda x: odors[x][0], self.validationResult[0].keys())))
@@ -159,7 +165,7 @@ class QtWatchdogController(ExpFolder):
         if not is_train:
             assert len(files_list) == 1, "Only one file can be processed, sorry!"
         for f in files_list:
-            print("file %s" % f)
+            logger.info("file %s" % f)
             key, ext = os.path.splitext(f)
             if ext == '.inf':
                 if key in self.workers:

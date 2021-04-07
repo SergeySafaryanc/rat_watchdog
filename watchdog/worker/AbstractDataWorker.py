@@ -13,6 +13,7 @@ from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
 
 # from watchdog.utils.readme import readme
 from loguru import logger
+from itertools import chain
 
 from watchdog.utils.readme import Singleton, write
 
@@ -36,14 +37,14 @@ class ExpFolder:
         if not is_train:
             folders = [fname for fname in os.listdir(f"{out_path}{os.sep}") if
                        os.path.isdir(os.path.join(f"{out_path}{os.sep}", fname))]
-            print(folders)
+            logger.info(folders)
             folders = sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}{os.sep}", x)).st_mtime)
-            print(folders)
+            logger.info(folders)
             self.__exp_folder = f"{out_path}{os.sep}{folders[-1]}"
             while (len(os.listdir(self.__exp_folder)) == 0):
                 folders = folders[:-1]
                 self.__exp_folder = f"{out_path}{os.sep}{folders[-1]}"
-            print(self.__exp_folder)
+            logger.info(self.__exp_folder)
             return
         if os.path.exists(out_path) and os.path.exists(self.__exp_folder) is False:
             os.mkdir(self.__exp_folder)
@@ -78,7 +79,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         #     os.mkdir(self.__exp_folder)
         #     logger.debug(f"Folder - {self.__exp_folder} created")
 
-        self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
+        self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=list(chain(*odors_set)), shep_groups=odors_set)  # groupcom
         self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
         self.counter = 0
@@ -98,26 +99,33 @@ class AbstractDataWorker(QThread, ExpFolder):
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
+        self.labels_map = {}  # новое автоматическое задание labels_map
+        for i in list(chain(*odors_set)):
+            for j in range(len(odors_set)):
+                if i in odors_set[j]:
+                    self.labels_map[i] = j
+        logger.info(f"labels_map: {self.labels_map}")
+
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
         # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
-        print(f"K: {str(resK)}")
-        print(f"S: {str(resS)}")
+        logger.info(f"K: {str(resK)}")
+        logger.info(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
-        print(f"res before: {str(res)}")
+        logger.info(f"res before: {str(res)}")
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
-        print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        print(res, 'before convert result')
+        logger.info(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
+        logger.info(res, 'before convert result')
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
 
-        print(f"res after: {res}")
-        print(f"selected_classifiers: {selected_classifiers}")
-        print(res)
-        print(selected_classifiers)
+        logger.info(f"res after: {res}")
+        logger.info(f"selected_classifiers: {selected_classifiers}")
+        logger.info(res)
+        logger.info(selected_classifiers)
         return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
 
     # def predict_ter(self, block): # не используется
@@ -191,8 +199,8 @@ class AbstractDataWorker(QThread, ExpFolder):
             self.stop()
         res = self.classifierWrapper.train(path)
         resK = self.kirClassifierWrapper.train(path)
-        print(f"AbstractDataWorker.py: res: {res}")
-        print(f"AbstractDataWorker.py: resK: {resK}")
+        logger.info(f"AbstractDataWorker.py: res: {res}")
+        logger.info(f"AbstractDataWorker.py: resK: {resK}")
         res = res + resK
         logger.info(res)
         res1 = [r[1] for r in res]
@@ -205,7 +213,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         labels = [label for label in labels if label != 64]
         logger.info(labels)
-        labels = [labels_map[l] for l in labels][-len(res[0][1]):]
+        labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
+        logger.info(labels)
 
         # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
 
@@ -214,8 +223,8 @@ class AbstractDataWorker(QThread, ExpFolder):
                 labels)) * 100) for r in res]
         logger.info(res)
 
-        print(self.record.shape)
-        print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
+        logger.info(self.record.shape)
+        logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
         write(Singleton.text())
         # readme([i[1] for i in res])
