@@ -270,6 +270,7 @@ def slope_original_signal_val_last(data):
                                       criterion='friedman_mse', min_samples_split=3, max_depth=3, random_state=42)
     clf8.fit(train_features, train_labels)
     sc = clf8.predict(val_features).astype(int)
+    sc -= 1
     return (6, sc)
 
 
