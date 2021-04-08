@@ -19,6 +19,7 @@ class QtWatchdogController(ExpFolder):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
         Singleton.set("Метки веществ", dict(zip(odors_set, [i[0] for i in odors])))
+        Singleton.set("Веса", weights)
 
         super().__init__()
         self.channel_pairs = list(combinations(np.arange(0, num_of_channels), 2))
@@ -143,8 +144,8 @@ class QtWatchdogController(ExpFolder):
         print()
         self.validationResult[0][result] += 1 if result == label else 0
         self.validationResult[1][resultList[-1]] += 1 if resultList[-1] == label else 0
-        print(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
-        print(f"Odors: {odors}")
+        logger.info(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
+        logger.info(f"Odors: {odors}")
         with open(os.path.join(self.exp_folder, name + '_validation_result.csv'), 'w') as f:
         # with open(os.path.join(out_path, name + '_validation_result.csv'), 'w') as f:
             f.write(';'.join(map(lambda x: odors[x][0], self.validationResult[0].keys())))
@@ -159,7 +160,7 @@ class QtWatchdogController(ExpFolder):
         if not is_train:
             assert len(files_list) == 1, "Only one file can be processed, sorry!"
         for f in files_list:
-            print("file %s" % f)
+            logger.info("file %s" % f)
             key, ext = os.path.splitext(f)
             if ext == '.inf':
                 if key in self.workers:

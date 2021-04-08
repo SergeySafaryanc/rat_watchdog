@@ -9,6 +9,7 @@ import socket
 from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
+from loguru import logger
 
 class SocketDataWorker(AbstractDataWorker):
 
@@ -32,7 +33,7 @@ class SocketDataWorker(AbstractDataWorker):
             data = np.array([]).reshape(-1, num_channels)
 
             with conn:
-                print('Connected by', addr)
+                logger.info('Connected by', addr)
                 while self.working:
                     buffer = np.frombuffer(conn.recv(self.bytes_to_read, socket.MSG_WAITALL), 'i2').reshape(
                         (-1, self.socket_num_channels))

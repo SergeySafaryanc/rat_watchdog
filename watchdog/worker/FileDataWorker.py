@@ -1,10 +1,10 @@
-from loguru import logger
 from configs.watchdog_config import *
 from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from time import sleep
 import numpy as np
 
+from loguru import logger
 
 class FileDataWorker(AbstractDataWorker):
     def __init__(self, f_name, name, bytes_to_read, epoch_time, decimate_rate, channel_pairs, train_flag):
