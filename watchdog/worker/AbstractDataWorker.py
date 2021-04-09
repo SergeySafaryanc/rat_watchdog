@@ -110,7 +110,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
         logger.info(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        logger.info(res, 'before convert result')
+        logger.info("before convert result")
+        logger.info(res)
         res = self.classifierWrapper.convert_result_log(res)
         # Вывод только классификатор Шепелева
 
