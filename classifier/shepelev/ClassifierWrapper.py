@@ -24,6 +24,11 @@ class ClassifierWrapper:
         self.unite = unite
         self.unite_test = unite_test
 
+
+
+        if len(shep_groups) == len(odors):
+            self.shep_groups = []
+
         logger.info(f"ClassifierWrapper.py: num_channels: {self.num_channels}")
         logger.info(f"ClassifierWrapper.py: odors: {self.odors}")
         logger.info(f"ClassifierWrapper.py: shep_group: {self.shep_groups}")
@@ -33,14 +38,15 @@ class ClassifierWrapper:
 
     def predict(self, data):
         # unite_index = [i[0] for i in self.unite]
+        # self.shep_groups = [i[0] for i in self.shep_groups]
         logger.info("<<<<<<<<<<<<<<<<<")
         logger.info(self.odors)
-        logger.info(classifier(data, self.num_channels, self.odors, [], self.decimate))
+        logger.info(classifier(data, self.num_channels, self.odors, self.shep_groups, self.decimate))
         logger.info(">>>>>>>>>>>>>>>>")
-        return classifier(data, self.num_channels, self.odors, [], self.decimate)
+        return classifier(data, self.num_channels, self.odors, self.shep_groups, self.decimate)
 
     def train(self, file_name):
-        return train(file_name, self.num_channels, self.odors, [], self.decimate)
+        return train(file_name, self.num_channels, self.odors, self.shep_groups, self.decimate)
 
     def convert_result(self, label):
         for j in range(len(self.unite_test)):

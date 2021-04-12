@@ -221,7 +221,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
-        logger.info(res)
+        # logger.info(res)
 
         logger.info(self.record.shape)
         logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
