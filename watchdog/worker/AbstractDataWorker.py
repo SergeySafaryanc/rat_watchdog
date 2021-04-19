@@ -3,7 +3,7 @@ import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
 import pandas as pd
-from itertools import groupby
+from itertools import groupby, chain
 import numpy as np
 import os
 
@@ -78,7 +78,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         #     os.mkdir(self.__exp_folder)
         #     logger.debug(f"Folder - {self.__exp_folder} created")
 
-        self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_set, unite=unite)
+        self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_unite, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
         self.bytes_to_read = bytes_to_read
         self.counter = 0
@@ -97,6 +97,13 @@ class AbstractDataWorker(QThread, ExpFolder):
         self.train_flag = train_flag
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
+
+        self.labels_map = {}  # новое автоматическое задание labels_map
+        for i in list(chain(*odors_unite)):
+            for j in range(len(odors_unite)):
+                if i in odors_unite[j]:
+                    self.labels_map[i] = j
+        logger.info(f"labels_map: {self.labels_map}")
 
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
@@ -206,7 +213,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(labels)
         labels = [label for label in labels if label != 64]
         logger.info(labels)
-        labels = [labels_map[l] for l in labels][-len(res[0][1]):]
+        labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
+        logger.info(labels)
 
         # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
 
@@ -418,6 +426,19 @@ class AbstractDataWorker(QThread, ExpFolder):
                 "[Version]\nDevice=Smell-ADC\n\n[Object]\nFILE=\"\"\n\n[Format]\nType=binary\n\n[Parameters]\nNChannels={0}\nNSamplings={1}\nSamplingFrequency={2}\n\n[ChannelNames]\n{3}"
                     .format(num_channels, nNSamplings, sampling_rate,
                             "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
+
+    def correct_labels_by_groups(self, data):
+        for group in odors_unite:  # просматриваем в цикле группы
+            if len(group) == 1:  # если число элементов в группе равно одному
+                continue  # пропускаем
+            for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
+                data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
+        # for i in range(data.shape[0]):  # для всех меток клапанов
+        #     if data[i, -1] != 0:  # если метка не нулевая
+        #         for group in odors_unite:  # просматриваем в цикле группы
+        #             if data[i, -1] in group:  # если принадлежит группе
+        #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
+        return data
 
     def dataProcessing(self, batch):
         self.tick.emit(self.corrcoef_between_channels(batch), self.breathing_rate(batch))

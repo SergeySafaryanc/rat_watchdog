@@ -1,7 +1,7 @@
 import math
 from sys import path as pylib
 import os
-from configs.watchdog_config import pylib_path, unite_test
+from configs.watchdog_config import pylib_path, unite_test, odors_unite
 
 pylib += [os.path.abspath(pylib_path)]
 from rat import *
@@ -18,16 +18,16 @@ class ClassifierWrapper:
         @param unite_test: Нужно для подсчета результатов, когда меняем местами клапана
         """
         self.num_channels = num_channels
-        self.odors = odors
+        self.odors = [i[0] for i in odors]
         self.unite = unite
         self.decimate = decimate
         self.unite_test = unite_test
 
-        print(f"ClassifierWrapper.py: num_channels: {num_channels}")
-        print(f"ClassifierWrapper.py: odors: {odors}")
-        print(f"ClassifierWrapper.py: unite: {unite}")
-        print(f"ClassifierWrapper.py: decimate: {decimate}")
-        print(f"ClassifierWrapper.py: unite_test: {unite_test}")
+        print(f"ClassifierWrapper.py: num_channels: {self.num_channels}")
+        print(f"ClassifierWrapper.py: odors_set: {self.odors}")
+        print(f"ClassifierWrapper.py: unite: {self.unite}")
+        print(f"ClassifierWrapper.py: decimate: {self.decimate}")
+        print(f"ClassifierWrapper.py: unite_test: {self.unite_test}")
 
     def predict(self, data):
         # unite_index = [i[0] for i in self.unite]

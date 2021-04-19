@@ -18,7 +18,7 @@ class QtWatchdogController(ExpFolder):
     def __init__(self):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
-        Singleton.set("Метки веществ", dict(zip(odors_set, [i[0] for i in odors])))
+        Singleton.set("Метки веществ", dict(zip([o[0] for o in odors_unite], [i[0] for i in odors])))
         Singleton.set("Веса", weights)
 
         super().__init__()
