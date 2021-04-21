@@ -29,9 +29,11 @@ class Config(BaseModel):
     rat_name: str = ""
 
     def __init__(self, file: str, is_refresh: bool = False, **data: Any) -> None:
+        print(data)
         super().__init__(**json.load(open(file, encoding="UTF-8")))
         if is_refresh:
+            print(data)
             super(Config, self).__init__(**data)
-            json.dump(self.dict(), open(file, "w"), ensure_ascii=False, indent=4)
+            json.dump(data, open(file, "w"), ensure_ascii=False, indent=4)
 
 

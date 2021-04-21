@@ -32,13 +32,13 @@ class ClassifierWrapper:
     def predict(self, data):
         # unite_index = [i[0] for i in self.unite]
         print("<<<<<<<<<<<<<<<<<")
-        classifier = classifier(data, self.num_channels, self.odors, self.unite_test, self.decimate)
+        classifier = classifier(data, self.num_channels, self.odors, [], self.decimate)
         print(classifier)
         print(">>>>>>>>>>>>>>>>")
         return classifier
 
     def train(self, file_name):
-        return train(file_name, self.num_channels, self.odors, self.unite, self.decimate)
+        return train(file_name, self.num_channels, self.odors, [], self.decimate)
 
     def convert_result(self, label):
         for j in range(len(self.unite_test)):

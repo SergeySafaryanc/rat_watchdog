@@ -101,51 +101,22 @@ class MainWindow(BaseWindow):
         self.formLayout.addRow("Is File", self.data_source_is_file)
         self.formLayout.addRow("Is Train", self.is_train)
 
-        self.r0c1 = QLabel("Agent")
-        self.r0c2 = QLabel("Weight")
-        r0 = QtWidgets.QHBoxLayout()
-        r0.addWidget(self.r0c1)
-        r0.addWidget(self.r0c2)
+        # self.r0c1 = QLabel("Agent")
+        # self.r0c2 = QLabel("Weight")
+        # r0 = QtWidgets.QHBoxLayout()
+        # r0.addWidget(self.r0c1)
+        # r0.addWidget(self.r0c2)
 
-        self.r1c1 = QLineEdit(odors[0][0])
-        self.r1c2 = QLineEdit(str(weights[0]))
-        r1 = QtWidgets.QHBoxLayout()
-        r1.addWidget(self.r1c1)
-        r1.addWidget(self.r1c2)
+        self.vbox = QVBoxLayout()
+        for i in range(N):
+            setattr(self, str(f"r{i}c1"), QLineEdit(odors[i][0]))
+            setattr(self, str(f"r{i}c2"), QLineEdit(str(weights[i])))
+            setattr(self, str(f"r{i}"), QtWidgets.QHBoxLayout())
+            getattr(self, str(f"r{i}")).addWidget(getattr(self, str(f"r{i}c1")))
+            getattr(self, str(f"r{i}")).addWidget(getattr(self, str(f"r{i}c2")))
+            self.vbox.addLayout(getattr(self, str(f"r{i}")))
 
-        self.r2c1 = QLineEdit(odors[1][0])
-        self.r2c2 = QLineEdit(str(weights[1]))
-        r2 = QtWidgets.QHBoxLayout()
-        r2.addWidget(self.r2c1)
-        r2.addWidget(self.r2c2)
-
-        self.r3c1 = QLineEdit(odors[2][0])
-        self.r3c2 = QLineEdit(str(weights[2]))
-        r3 = QtWidgets.QHBoxLayout()
-        r3.addWidget(self.r3c1)
-        r3.addWidget(self.r3c2)
-
-        self.r4c1 = QLineEdit(odors[3][0])
-        self.r4c2 = QLineEdit(str(weights[3]))
-        r4 = QtWidgets.QHBoxLayout()
-        r4.addWidget(self.r4c1)
-        r4.addWidget(self.r4c2)
-
-        self.r5c1 = QLineEdit(odors[4][0])
-        self.r5c2 = QLineEdit(str(weights[4]))
-        r5 = QtWidgets.QHBoxLayout()
-        r5.addWidget(self.r5c1)
-        r5.addWidget(self.r5c2)
-
-        vbox = QVBoxLayout()
-        vbox.addLayout(r0)
-        vbox.addLayout(r1)
-        vbox.addLayout(r2)
-        vbox.addLayout(r3)
-        vbox.addLayout(r4)
-        vbox.addLayout(r5)
-
-        self.formLayout.addRow(vbox)
+        self.formLayout.addRow(self.vbox)
 
         self.formLayout.addRow(self.start_button)
         self.formLayout.addRow(self.stop_button)
@@ -264,6 +235,9 @@ class MainWindow(BaseWindow):
         QMessageBox.about(self, "Result", message)
         return self
 
+    def show_acc(self):
+        pass
+
     def __validate(self):
         current_setting = {
             "HOST": self.HOST.text(),
@@ -280,18 +254,13 @@ class MainWindow(BaseWindow):
             "is_result_validation": True,
             "is_train": bool(self.is_train.isChecked()),
             "use_auto_train": True,
-            "odors": [
-                [self.r1c1.text(), "#ffff00"],
-                [self.r2c1.text(), "#ffff00"],
-                [self.r3c1.text(), "#ffff00"],
-                [self.r4c1.text(), "#ffff00"],
-                [self.r5c1.text(), "#ffff00"],
-            ],
-            "odors_set": [1, 2, 4, 8, 16],
-            "weights": [float(self.r1c2.text()), float(self.r2c2.text()), float(self.r3c2.text()), float(self.r4c2.text()), float(self.r5c2.text())],
-            "unite": [[0], [1], [2], [3], [4]],
-            "unite_test": [[0], [1], [2], [3], [4]],
+            "odors": [(str(getattr(self, str(f"r{i}c1")).text()), "#ffff00") for i in range(N)],
+            "odors_set": [2**i for i in range(N)],
+            "weights": [float(getattr(self, str(f"r{i}c2")).text()) for i in range(N)],
+            "unite": [[i] for i in range(N)],
+            "unite_test": [[i] for i in range(N)],
             "rat_name": self.rat_name.text()
         }
+        print(current_setting)
         Config(config_file, True, **current_setting)
         print("Replace!")
