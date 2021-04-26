@@ -10,6 +10,7 @@ class GUI(object):
         self.app = QtWidgets.QApplication([])
         self.mainWindow = MainWindow(screen=0, fullScreen=True, channel_pairs=channel_pairs)
         self.mainWindow.closeEvent = self.quit
+        # self.mainWindow.accuracy_list.setText(self.show_accuracy)
         self.mainWindow.start_button.clicked.connect(self.validation)
 
         # self.plotWindow = PlotWindow(screen=1, center=True, fullScreen=True, channel_pairs=channel_pairs)
@@ -20,6 +21,10 @@ class GUI(object):
 
     def quit(self, e):
         self.app.exit()
+
+    def show_accuracy(self, accuracy):
+        self.mainWindow.accuracy_list.setText(accuracy)
+        print(accuracy)
 
     def validation(self):
         # c = Config()

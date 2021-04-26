@@ -66,6 +66,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
+    sendAccuracy = pyqtSignal(str)
 
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
@@ -217,6 +218,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         print(self.record.shape)
         print(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
+        self.sendAccuracy.emit(str(sorted([round(float(o[1]), 2) for o in res], reverse=True)))
         write(Singleton.text())
         # readme([i[1] for i in res])
         # Точность по ЦВ

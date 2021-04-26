@@ -147,6 +147,7 @@ class QtWatchdogController(ExpFolder):
         self.validationResult[0][result] += 1 if result == label else 0
         self.validationResult[1][resultList[-1]] += 1 if resultList[-1] == label else 0
         print(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
+        # self.gui.show_accuracy(str(self.validationResult[0].keys()))
         print(f"Odors: {odors}")
         with open(os.path.join(self.exp_folder, name + '_validation_result.csv'), 'w') as f:
         # with open(os.path.join(out_path, name + '_validation_result.csv'), 'w') as f:
@@ -181,10 +182,15 @@ class QtWatchdogController(ExpFolder):
             self.gui.mainWindow.showMessage(message, "background: %s" % color)
             self.workers[key] = worker
 
+    def accuracy(self, accuracy: str):
+        print("Current accuracy " + accuracy)
+        self.gui.mainWindow.accuracy_list.setText(accuracy)
+
     def initDataWorker(self, worker):
         worker.tick.connect(self.onTick)
         worker.tickViewSig.connect(self.onTickViewSig)
         worker.resultTest.connect(self.onResultTest)
         worker.resultTrain.connect(self.onResultTrain)
         worker.sendMessage.connect(self.sendMessage)
+        worker.sendAccuracy.connect(self.accuracy)
 

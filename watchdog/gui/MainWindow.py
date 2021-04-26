@@ -101,12 +101,6 @@ class MainWindow(BaseWindow):
         self.formLayout.addRow("Is File", self.data_source_is_file)
         self.formLayout.addRow("Is Train", self.is_train)
 
-        # self.r0c1 = QLabel("Agent")
-        # self.r0c2 = QLabel("Weight")
-        # r0 = QtWidgets.QHBoxLayout()
-        # r0.addWidget(self.r0c1)
-        # r0.addWidget(self.r0c2)
-
         self.vbox = QVBoxLayout()
         for i in range(N):
             setattr(self, str(f"r{i}c1"), QLineEdit(odors[i][0]))
@@ -122,6 +116,12 @@ class MainWindow(BaseWindow):
         self.formLayout.addRow(self.stop_button)
         # FORM
 
+        self.accuracy = QVBoxLayout()
+        self.accuracy_list = QtWidgets.QLineEdit()
+        self.accuracy_list.setFixedHeight(50)
+        self.accuracy.addWidget(self.accuracy_list)
+        # ACCURACY
+
         font = QFont()
         font.setPointSize(50)
 
@@ -134,6 +134,7 @@ class MainWindow(BaseWindow):
         self.gridLayout.addLayout(self.resultListWrapper, 1, Qt.AlignLeft)
         # ????
         self.gridLayout.addLayout(self.formLayout, 1, Qt.AlignTop)
+        self.gridLayout.addLayout(self.accuracy, 0, Qt.AlignLeft)
         self.gridLayout.addWidget(self.canvas, 1, Qt.AlignRight)
         # ????
         # self.wrapper.addWidget(self.label, 1, Qt.AlignCenter)

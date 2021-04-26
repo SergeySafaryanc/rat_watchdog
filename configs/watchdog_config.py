@@ -2,7 +2,7 @@ from configs.json_parser_configuration import Config
 config_file = "/home/quantum/PycharmProjects/rat_watchdog_novosib/config.json"
 config = Config(file=config_file)
 
-N = 15
+N = 3
 # Socket conf
 
 HOST = config.HOST
