@@ -10,6 +10,7 @@ from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 
 from loguru import logger
+from itertools import chain
 
 class SocketDataWorker(AbstractDataWorker):
 
@@ -24,7 +25,7 @@ class SocketDataWorker(AbstractDataWorker):
         self.working = True
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            odor_labels_set = list(chain(*odors_unite))
+            odor_labels_set = set(list(chain(*odors_unite)))
             s.bind((HOST, PORT))
             s.listen()
             conn, addr = s.accept()
@@ -52,14 +53,14 @@ class SocketDataWorker(AbstractDataWorker):
                                 self.current_label = -1
                             data[i, -1] = 0
 
-                    # if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
-                    #     # здесь сохранить no_corr
-                    #     with open(os.path.join(self.exp_folder, self.path_to_res + "_no_corr.dat"), 'ab') as f:
-                    #     # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
-                    #         np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
-                    #
-                    #     # здесь скорректировать
-                    #     data = self.correct_labels_by_groups(data)
+                    if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
+                        # здесь сохранить no_corr
+                        with open(os.path.join(self.exp_folder, self.path_to_res + "_no_corr.dat"), 'ab') as f:
+                        # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
+                            np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
+
+                        # здесь скорректировать
+                        data = self.correct_labels_by_groups(data)
 
                     # сохранить как .dat
                     with open(os.path.join(self.exp_folder, self.path_to_res + ".dat"), 'ab') as f:

@@ -3,7 +3,7 @@ import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
 import pandas as pd
-from itertools import groupby, chain
+from itertools import groupby
 import numpy as np
 import os
 
@@ -13,6 +13,7 @@ from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
 
 # from watchdog.utils.readme import readme
 from loguru import logger
+from itertools import chain
 
 from watchdog.utils.readme import Singleton, write
 

@@ -1,5 +1,3 @@
-from itertools import chain
-
 from configs.watchdog_config import *
 from watchdog.utils.readme import Singleton, write
 from watchdog.worker.AbstractDataWorker import AbstractDataWorker
@@ -7,6 +5,7 @@ from time import sleep
 import numpy as np
 
 from loguru import logger
+from itertools import chain
 import os
 
 class FileDataWorker(AbstractDataWorker):
