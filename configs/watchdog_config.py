@@ -22,7 +22,7 @@ num_counter_for_refresh_animal = 245  # количество стимулов д
 count_train_stimuls = 150  # число тренировок
 train_step = 30  # число смещений (кол-во клапанов * 5)
 
-data_source_is_file = False  # выбор датасорса, true - file, false - socket
+data_source_is_file = True  # выбор датасорса, true - file, false - socket
 is_result_validation = True  # не трогать (типа валидация, кол-во правильных из скольких)
 
 is_train = True  # обучение или тестирование

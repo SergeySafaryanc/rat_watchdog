@@ -2,6 +2,7 @@ import os
 
 from configs.watchdog_config import *
 
+from loguru import logger
 
 class Singleton(object):
     __instance = dict()
@@ -40,14 +41,14 @@ def write(text=None, is_first=False, is_test=False):
     # это один большой костыль, совпадающий по коду с указанием переменной __exp_folder
     folders = [fname for fname in os.listdir(f"{out_path}{os.sep}") if
                os.path.isdir(os.path.join(f"{out_path}{os.sep}", fname))]
-    print(folders)
+    # logger.info(folders)
     folders = sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}{os.sep}", x)).st_mtime)
-    print(folders)
+    # logger.info(folders)
     readme_exp_folder=f"{out_path}{os.sep}{folders[-1]}"
     while (len(os.listdir(readme_exp_folder)) == 0):
         folders = folders[:-1]
         readme_exp_folder = f"{out_path}{os.sep}{folders[-1]}"
-    print(readme_exp_folder)
+    # logger.info(readme_exp_folder)
     # конец большого костыля
     file_to_record = f"{readme_exp_folder}{os.sep}{rat_name}.txt"
     stream = open(file=file_to_record, mode='a')

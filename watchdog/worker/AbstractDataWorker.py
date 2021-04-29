@@ -37,7 +37,7 @@ class ExpFolder:
         if not is_train:
             folders = [fname for fname in os.listdir(f"{out_path}{os.sep}") if
                        os.path.isdir(os.path.join(f"{out_path}{os.sep}", fname))]
-            logger.info(folders)
+            # logger.info(folders)
             folders = sorted(folders, key=lambda x: os.stat(os.path.join(f"{out_path}{os.sep}", x)).st_mtime)
             logger.info(folders)
             self.__exp_folder = f"{out_path}{os.sep}{folders[-1]}"
@@ -162,11 +162,11 @@ class AbstractDataWorker(QThread, ExpFolder):
 
     def get_result_old(self, res): # устарело
         x = pd.Series(res)
-        logger.info(x)
+        # logger.info(x)
         x = x.value_counts()
-        logger.info(x)
+        # logger.info(x)
         ind = x[x == x.max()].index
-        logger.info(ind)
+        # logger.info(ind)
         if len(ind) > 1:
             if 1 in ind:
                 return 1
@@ -177,13 +177,13 @@ class AbstractDataWorker(QThread, ExpFolder):
 
     def get_result(self, res):
         x = pd.Series(res)
-        logger.info(x)
+        # logger.info(x)
         x = x.value_counts()
-        logger.info(x)
+        # logger.info(x)
         x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
-        logger.info(x)
+        # logger.info(x)
         ind = x[x == x.max()].index
-        logger.info(ind)
+        # logger.info(ind)
         return ind[0]
 
     def corrcoef_between_channels(self, data):
@@ -209,11 +209,11 @@ class AbstractDataWorker(QThread, ExpFolder):
         val_res = res1  # создание переменной с ответами классификаторов для дальнейшего вывода в файл
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
-        logger.info(mask)
+        # logger.info(mask)
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
         logger.info(labels)
         labels = [label for label in labels if label != 64]
-        logger.info(labels)
+        # logger.info(labels)
         labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
 
@@ -222,12 +222,14 @@ class AbstractDataWorker(QThread, ExpFolder):
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
-        logger.info(res)
+        # logger.info(res)
 
-        logger.info(self.record.shape)
-        # logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}")
-        Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{[o[1] for o in res]}")
+        # logger.info(self.record.shape)
+        # logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}") # скрыли точности по клф
+        logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
+        Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{res}")
         write(Singleton.text())
+
         # readme([i[1] for i in res])
         # Точность по ЦВ
         # cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
@@ -257,7 +259,7 @@ class AbstractDataWorker(QThread, ExpFolder):
                    delimiter=",")
         # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select_ter(res)
-        logger.info(selected_classifiers)  #
+        # logger.info(selected_classifiers)  #
         np.savetxt(str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_selected_classifiers.csv")),
                    np.array(selected_classifiers),
                    # np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
@@ -266,19 +268,19 @@ class AbstractDataWorker(QThread, ExpFolder):
                    delimiter=",")
         # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
-        logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
+        # logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
         answers = np.array(
             [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
         answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
-        logger.info(answers)  #
+        # logger.info(answers)  #
         val_res.append(np.array(answers))  # добавление ответов в вывод
 
-        logger.info(labels)
+        # logger.info(labels)
         val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
-        logger.info(self.classifierWrapper.convert_result_log(answers))  #
-        logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            self.classifierWrapper.convert_result_log(labels)))  #
+        # logger.info(self.classifierWrapper.convert_result_log(answers))  #
+        # logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
+        #     self.classifierWrapper.convert_result_log(labels)))  #
         accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
             self.classifierWrapper.convert_result_log(labels))) * 100
 
@@ -386,38 +388,38 @@ class AbstractDataWorker(QThread, ExpFolder):
         if len(td) >= 3:  # если после отбрасывания осталось 3 и больше
             ranks = [(acc, list(clfs)) for (acc, clfs) in
                      groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по округленным точностям
-            logger.info(ranks)  #
+            # logger.info(ranks)  #
             res = []  # инициализируем массив результата
-            logger.info(res)  #
+            # logger.info(res)  #
             for rank in ranks[0:]:  # набираем не менее 3 классификаторов по всем рангам последовательно по убыванию
                 res += [clf[0] for clf in rank[1]]  # заносим в итоговый результат все классификаторы из ранга
                 logger.info(res)  #
                 if len(res) >= 3:  # если уже 3 и больше
                     return sorted(res)  # возвращаем
         else:  # возвращаем самый худший для того, чтоб не пройти валидацию на этом обучении и учиться дальше
-            logger.info(srt)  #
+            # logger.info(srt)  #
             srt = sorted(srt, key=lambda x: x[1])  # сортировка в порядке возрастания для возврата наименьшего
-            logger.info(srt)  #
+            # logger.info(srt)  #
             return [srt[0][0]]  # возвращаем индекс первого (худшего)
 
     def select_ter(self, val):
         selected = self.select(val)  # выбранные классификаторы
-        logger.info(selected)
+        # logger.info(selected)
         selected = list(map(lambda i: val[i], selected))  # по номерам получаем и номера, и точности
-        logger.info(selected)
+        # logger.info(selected)
         srt = sorted(selected,
                      key=lambda x: (-x[1], -x[0]))  # сортировка по убыванию точности и индекса (чтоб захватить Колины)
-        logger.info(srt)
+        # logger.info(srt)
         if (len(srt) > 3):  # если больше 3 вернул select
-            logger.info("len(srt)>3")
+            # logger.info("len(srt)>3")
             for clf in srt[:3]:  # ищем LDA или SLP
-                logger.info(clf)
+                # logger.info(clf)
                 if (clf[0]) == 7 or (clf[0]) == 6:  # если LDA или SLP
                     srt = srt[:4]  # берём ещё один классификатор
                     break
             else:
                 srt = srt[:3]
-            logger.info(srt)
+            # logger.info(srt)
         return sorted([srt[i][0] for i in range(len(srt))])
 
     def create_inf(self, path_to_res, nNSamplings):

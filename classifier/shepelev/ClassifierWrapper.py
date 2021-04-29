@@ -6,6 +6,8 @@ from configs.watchdog_config import pylib_path, unite_test, odors_unite
 pylib += [os.path.abspath(pylib_path)]
 from rat import *
 
+from loguru import logger
+
 
 class ClassifierWrapper:
     def __init__(self, num_channels=16, odors=[1, 2, 4, 8, 16], unite=[[1, 2], [4, 8], [16]], decimate=1):
@@ -23,18 +25,18 @@ class ClassifierWrapper:
         self.decimate = decimate
         self.unite_test = unite_test
 
-        print(f"ClassifierWrapper.py: num_channels: {self.num_channels}")
-        print(f"ClassifierWrapper.py: odors_set: {self.odors}")
-        print(f"ClassifierWrapper.py: unite: {self.unite}")
-        print(f"ClassifierWrapper.py: decimate: {self.decimate}")
-        print(f"ClassifierWrapper.py: unite_test: {self.unite_test}")
+        logger.info(f"ClassifierWrapper.py: num_channels: {self.num_channels}")
+        logger.info(f"ClassifierWrapper.py: odors_set: {self.odors}")
+        logger.info(f"ClassifierWrapper.py: unite: {self.unite}")
+        logger.info(f"ClassifierWrapper.py: decimate: {self.decimate}")
+        logger.info(f"ClassifierWrapper.py: unite_test: {self.unite_test}")
 
     def predict(self, data):
         # unite_index = [i[0] for i in self.unite]
-        print("<<<<<<<<<<<<<<<<<")
-        print(self.odors)
-        print(classifier(data, self.num_channels, self.odors, [], self.decimate))
-        print(">>>>>>>>>>>>>>>>")
+        logger.info("<<<<<<<<<<<<<<<<<")
+        logger.info(self.odors)
+        logger.info(classifier(data, self.num_channels, self.odors, [], self.decimate))
+        logger.info(">>>>>>>>>>>>>>>>")
         return classifier(data, self.num_channels, self.odors, [], self.decimate)
 
     def train(self, file_name):
@@ -51,5 +53,5 @@ class ClassifierWrapper:
             for j in range(len(self.unite)):
                 if res[i] in self.unite[j]:
                     result.append(j)
-        print(f"ClassifierWrapper.py: result: {result}")
+        logger.info(f"ClassifierWrapper.py: result: {result}")
         return result
