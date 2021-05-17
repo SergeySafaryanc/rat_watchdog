@@ -44,7 +44,7 @@ class FileDataWorker(AbstractDataWorker):
                         self.last_label_index = i
                         label = data[i, -1]
                     else:
-                        if data[i, -1] == 64:  # or data[i, -1] == 0:
+                        if data[i, -1] == 0:
                             self.current_label = -1
                         data[i, -1] = 0
                     # logger.info(self.current_label)

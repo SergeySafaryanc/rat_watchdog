@@ -49,9 +49,10 @@ class SocketDataWorker(AbstractDataWorker):
                             self.last_label_index = i
                             label = data[i, -1]
                         else:
-                            if data[i, -1] == 64:
+                            if data[i, -1] == 0:
                                 self.current_label = -1
                             data[i, -1] = 0
+                        # logger.info(self.current_label)
 
                     if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
                         # здесь сохранить no_corr

@@ -212,7 +212,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         # logger.info(mask)
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
         logger.info(labels)
-        labels = [label for label in labels if label != 64]
+        # labels = [label for label in labels if label != 64] КОСТЫЛЬ НА УДАЛЕНИЕ 64 МЕТКИ
         # logger.info(labels)
         labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
