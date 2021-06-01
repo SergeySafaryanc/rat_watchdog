@@ -19,6 +19,9 @@ def clearLogs():
     model2 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_SLP-ORS.mdl')
     if (os.path.exists(model2)):
         shutil.move(model2, backupPath)
+    super_best = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'super_best_weights.weight')
+    if (os.path.exists(super_best)):
+        shutil.move(super_best, backupPath)
     # print(logs)
     # print(model1)
     # print(model2)

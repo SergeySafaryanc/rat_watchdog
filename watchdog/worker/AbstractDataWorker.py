@@ -121,8 +121,7 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         res1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))  # преобразование ответов классификаторов
         logger.info(res1)
-        result = self.test_by_clf_answers_weighted(res1, odors_groups_to_valtest,
-                                                   np.asarray(weights))  # получение ответа комитета
+        result = self.test_by_clf_answers_weighted(res1, unite)  # получение ответа комитета
         logger.info(result)
 
         res = self.classifierWrapper.convert_result_log(res)
@@ -254,28 +253,32 @@ class AbstractDataWorker(QThread, ExpFolder):
         #     self.convert_result_group(labels, odors_groups_to_valtest), odors_groups_to_valtest)  # получение ответов комитета
         # # преобрование ответов комитета
 
-        res1 = np.transpose(np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
+        accuracy = 0  # задание низкой точности в случае невыбора классификаторов
+        if len(selected_classifiers) >= 3:
+            res1 = np.transpose(np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
+            logger.info(res1)
 
-        answers = list(self.test_by_clf_answers_weighted(res1, odors_groups_to_valtest,
-                                                    np.asarray(weights)))  # получение ответов комитета и преобразование
-        logger.info(answers)
-        # ## конец
+            weightsK, accuracyK = self.validate_by_clf_answers_weighted(res1,
+                np.asarray(labels), unite)  # получение весов
+            logger.info(weightsK)
+            logger.info(accuracyK)
 
-        # logger.info(answers)  #
-        val_res.append(np.array(answers))  # добавление ответов в вывод
+            answers = list(self.test_by_clf_answers_weighted(res1, unite))  # получение ответов комитета и преобразование
+            logger.info(answers)
+            # ## конец
 
-        # logger.info(labels)
-        val_res.append(np.array(labels))  # добавление реальных меток в вывод
+            # logger.info(answers)  #
+            val_res.append(np.array(answers))  # добавление ответов в вывод
 
-        # logger.info(self.classifierWrapper.convert_result_log(answers))  #
-        # logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-        #     self.classifierWrapper.convert_result_log(labels)))  #
+            # logger.info(labels)
+            val_res.append(np.array(labels))  # добавление реальных меток в вывод
 
-        logger.info(labels)
-        labels = list(self.convert_result_group(labels, odors_groups_to_valtest))
-        logger.info(labels)
-
-        accuracy = np.mean(np.array(answers) == np.array(labels)) * 100
+            # logger.info(self.classifierWrapper.convert_result_log(answers))  #
+            # logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
+            #     self.classifierWrapper.convert_result_log(labels)))  #
+        
+            accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
+                self.classifierWrapper.convert_result_log(labels))) * 100
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),
@@ -430,7 +433,6 @@ class AbstractDataWorker(QThread, ExpFolder):
     #     #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
     #     return data
 
-
     def clf_answers_to_result_weighted(self, current_answer_array, grouping_map, weight_dict):
         """
         current_answer_array - одномерный массив ответов лучших (зачастую трех) классификторов
@@ -496,12 +498,12 @@ class AbstractDataWorker(QThread, ExpFolder):
 
             real_answers = np.asarray([0,0,0,1,1,0,0])
 
-        grouping_map - группировка в формате [[1,4][3,5][2]]
+        grouping_map - группировка в формате [[1,4][3,5][2]]    
         """
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
-        weight_shift = 0.3
-        weight_array = np.arange(0.1, 1.6, weight_shift)
+        weight_shift = 0.2
+        weight_array = np.arange(0.4, 1.3, weight_shift)
         weight_combinations = [p for p in product(weight_array, repeat=len(all_clapans))]
         acc_list = []
         comb_list = []
@@ -522,9 +524,12 @@ class AbstractDataWorker(QThread, ExpFolder):
             comb_list.append(comb)
         comb_list - np.vstack(comb_list)
         acc_list = np.asarray(acc_list)
-        return acc_list, comb_list
+        all_best_comb = np.where(acc_list == np.amax(acc_list))[0]
+        super_best_weights = np.mean(np.vstack(comb_list)[all_best_comb], axis=0)
+        np.savetxt(fname='super_best_weights.weight', X=super_best_weights, delimiter=';')
+        return super_best_weights, np.amax(acc_list)
 
-    def test_by_clf_answers_weighted(self, clf_answers, grouping_map, clf_clapan_weights):
+    def test_by_clf_answers_weighted(self, clf_answers, grouping_map):
         """
         clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
                         ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора
@@ -539,6 +544,7 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         grouping_map - группировка в формате [[0,3][2,4][1]]    
         """
+        clf_clapan_weights = np.genfromtxt(fname='super_best_weights.weight', delimiter=';')
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
         weight_dict = np.vstack([all_clapans, clf_clapan_weights]).T
@@ -546,15 +552,15 @@ class AbstractDataWorker(QThread, ExpFolder):
         for j in range(clf_answers.shape[0]):
             res = self.clf_answers_to_result_weighted(clf_answers[j], grouping_map, weight_dict=weight_dict)
             result.append(res)
-        return result
-
-    def convert_result_group(self, res, groups):
-        result = []
-        for i in range(len(res)):
-            for j in range(len(groups)):
-                if res[i] in groups[j]:
-                    result.append(j)
         return np.asarray(result)
+
+    # def convert_result_group(self, res, groups):
+    #     result = []
+    #     for i in range(len(res)):
+    #         for j in range(len(groups)):
+    #             if res[i] in groups[j]:
+    #                 result.append(j)
+    #     return np.asarray(result)
 
 
     def dataProcessing(self, batch):

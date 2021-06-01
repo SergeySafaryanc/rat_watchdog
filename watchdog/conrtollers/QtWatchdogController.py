@@ -19,7 +19,6 @@ class QtWatchdogController(ExpFolder):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
         Singleton.set("Метки веществ", dict(zip([o[0] for o in odors_unite], [i[0] for i in odors])))
-        Singleton.set("Группы", odors_groups_to_valtest)
         Singleton.set("Веса", weights)
 
         super().__init__()
@@ -90,30 +89,22 @@ class QtWatchdogController(ExpFolder):
         #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
         #     f.write('\n')
 
-        # вывод ответов по всем классификаторам и предикта по комитету в виде меток (для групп свои)
-        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
-                              str(label)]))
-            f.write('\n')
-
-        logger.info(resСlassifiers)
-        resСlassifiers = list(self.convert_result_group(resСlassifiers, odors_groups_to_valtest))
-        logger.info(resСlassifiers)
-        logger.info(label)
-        label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odors_groups_to_valtest)[0]
-        logger.info(label)
-
         # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
         # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
             f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message,
                               odors[int(label)][0]]))
             f.write('\n')
+        # вывод ответов по всем классификаторам и предикта по комитету в виде меток
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
+                              str(label)]))
+            f.write('\n')
 
         message = "%i. %s" % (self.resultsCounter, message)
 
         if is_result_validation:
-            color = self.resultValidation((result, resСlassifiers), label, name)
+            color = self.resultValidation(results, label, name)
 
         self.gui.mainWindow.showMessage(message, "background: %s" % color)
         self.gui.mainWindow.addResultListItem(message, color)
@@ -196,12 +187,4 @@ class QtWatchdogController(ExpFolder):
         worker.resultTest.connect(self.onResultTest)
         worker.resultTrain.connect(self.onResultTrain)
         worker.sendMessage.connect(self.sendMessage)
-
-    def convert_result_group(self, res, groups):
-        result = []
-        for i in range(len(res)):
-            for j in range(len(groups)):
-                if res[i] in groups[j]:
-                    result.append(j)
-        return np.asarray(result)
 
