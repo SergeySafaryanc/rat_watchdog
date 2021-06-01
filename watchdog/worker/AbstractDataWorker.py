@@ -3,7 +3,7 @@ import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
 import pandas as pd
-from itertools import groupby
+from itertools import groupby, permutations, product
 import numpy as np
 import os
 
@@ -117,17 +117,19 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(f"res before: {str(res)}")
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
-        logger.info(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-        logger.info("before convert result")
-        logger.info(res)
-        res = self.classifierWrapper.convert_result_log(res)
-        # Вывод только классификатор Шепелева
+        # result = self.get_result(np.array([res[int(i)] for i in selected_classifiers])) # старое получение результата
 
+        res1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))  # преобразование ответов классификаторов
+        logger.info(res1)
+        result = self.test_by_clf_answers_weighted(res1, odors_groups_to_valtest,
+                                                   np.asarray(weights))  # получение ответа комитета
+        logger.info(result)
+
+        res = self.classifierWrapper.convert_result_log(res)
         logger.info(f"res after: {res}")
         logger.info(f"selected_classifiers: {selected_classifiers}")
-        logger.info(res)
-        logger.info(selected_classifiers)
-        return [self.get_result(np.array([res[int(i)] for i in selected_classifiers])), res]
+
+        return [result[0], res]
 
     # def predict_ter(self, block): # не используется
     #     selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
@@ -217,8 +219,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
 
-        # res_old = res  # для отчёта по ЦВ/НЕ ЦВ
-
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
@@ -229,31 +229,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
         Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{res}")
         write(Singleton.text())
-
-        # readme([i[1] for i in res])
-        # Точность по ЦВ
-        # cv_index = weights.index(max(weights))  # индекс ЦВ = индекс максимального веса (первого встретившегося)
-        # labels_cv_index = [x for x in range(len(labels)) if labels[x] == cv_index]
-        # logger.info(labels_cv_index)
-        # logger.info(np.array(labels)[labels_cv_index])
-        # res_cv = [(r[0], np.mean(
-        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_cv_index])) == self.classifierWrapper.convert_result_log(
-        #         np.array(labels)[labels_cv_index])) * 100) for r in res_old]
-        # logger.info(res_cv)
-        # Singleton.set("Точность на валидации по ЦВ", f"{Singleton.get('Точность на валидации по ЦВ')}\n{[o[1] for o in res_cv]}")
-        # write(Singleton.text())
-        #
-        # Точность по НЕ ЦВ
-        # labels_necv_index = [x for x in range(len(labels)) if labels[x] != cv_index]
-        # logger.info(labels_necv_index)
-        # logger.info(np.array(labels)[labels_necv_index])
-        # res_necv = [(r[0], np.mean(
-        #     np.array(self.classifierWrapper.convert_result_log(r[1][labels_necv_index])) == self.classifierWrapper.convert_result_log(
-        #         np.array(labels)[labels_necv_index])) * 100) for r in res_old]
-        # logger.info(res_necv)
-        # Singleton.set("Точность на валидации по НЕ ЦВ", f"{Singleton.get('Точность на валидации по НЕ ЦВ')}\n{[o[1] for o in res_necv]}")
-        # write(Singleton.text())
-        #
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
@@ -269,9 +244,23 @@ class AbstractDataWorker(QThread, ExpFolder):
         # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
 
         # logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
-        answers = np.array(
-            [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
-        answers_and_labels = np.array([answers, np.array(labels)])  # получение ответов
+        # answers = np.array( #раньше получали ответы тут
+        #     [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
+
+        # ## теперь
+        # res1 = np.transpose(np.array([res1[i] for i in selected_classifiers])) # преобразование ответов классификаторов
+        #
+        # answers = self.validate_by_clf_answers_weighted(res1,
+        #     self.convert_result_group(labels, odors_groups_to_valtest), odors_groups_to_valtest)  # получение ответов комитета
+        # # преобрование ответов комитета
+
+        res1 = np.transpose(np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
+
+        answers = list(self.test_by_clf_answers_weighted(res1, odors_groups_to_valtest,
+                                                    np.asarray(weights)))  # получение ответов комитета и преобразование
+        logger.info(answers)
+        # ## конец
+
         # logger.info(answers)  #
         val_res.append(np.array(answers))  # добавление ответов в вывод
 
@@ -281,14 +270,12 @@ class AbstractDataWorker(QThread, ExpFolder):
         # logger.info(self.classifierWrapper.convert_result_log(answers))  #
         # logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
         #     self.classifierWrapper.convert_result_log(labels)))  #
-        accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            self.classifierWrapper.convert_result_log(labels))) * 100
 
-        # answers_old = np.array(
-        #     [self.get_result_old(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in
-        #      range(len(res1[0]))])  # получение ответов по старой методике
-        # val_res.append(np.array(answers_old))  # добавление ответов по старой методике в вывод
-        # logger.info(val_res)
+        logger.info(labels)
+        labels = list(self.convert_result_group(labels, odors_groups_to_valtest))
+        logger.info(labels)
+
+        accuracy = np.mean(np.array(answers) == np.array(labels)) * 100
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),
@@ -430,18 +417,145 @@ class AbstractDataWorker(QThread, ExpFolder):
                     .format(num_channels, nNSamplings, sampling_rate,
                             "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
 
-    def correct_labels_by_groups(self, data):
-        for group in odors_unite:  # просматриваем в цикле группы
-            if len(group) == 1:  # если число элементов в группе равно одному
-                continue  # пропускаем
-            for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
-                data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
-        # for i in range(data.shape[0]):  # для всех меток клапанов
-        #     if data[i, -1] != 0:  # если метка не нулевая
-        #         for group in odors_unite:  # просматриваем в цикле группы
-        #             if data[i, -1] in group:  # если принадлежит группе
-        #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
-        return data
+    # def correct_labels_by_groups(self, data):
+    #     for group in odors_unite:  # просматриваем в цикле группы
+    #         if len(group) == 1:  # если число элементов в группе равно одному
+    #             continue  # пропускаем
+    #         for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
+    #             data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
+    #     # for i in range(data.shape[0]):  # для всех меток клапанов
+    #     #     if data[i, -1] != 0:  # если метка не нулевая
+    #     #         for group in odors_unite:  # просматриваем в цикле группы
+    #     #             if data[i, -1] in group:  # если принадлежит группе
+    #     #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
+    #     return data
+
+
+    def clf_answers_to_result_weighted(self, current_answer_array, grouping_map, weight_dict):
+        """
+        current_answer_array - одномерный массив ответов лучших (зачастую трех) классификторов
+                current_answer_array=np.asarray([0,1,4])
+        grouping_map - группировка в формате [[1,4][3,5][2]]
+        weight_dict- словарь весов для клапанов в формате:
+        weight_dict = np.asarray([[0,0.99],
+                                  [1,0.99],
+                                  [2,0.1],
+                                  [3,0.99],
+                                  [4,0.4],
+                                  [5,0.2],
+                                  [6,0.2],
+                                  [7,0.2]]).astype('float64')
+        """
+        clf_answers_weights = []
+        for ans_it in range(current_answer_array.shape[0]):
+            for dict_i in range(weight_dict.shape[0]):
+                if current_answer_array[ans_it] == weight_dict[dict_i, 0]:
+                    clf_answers_weights.append(weight_dict[dict_i, 1])
+        clf_answers_weights = np.asarray(clf_answers_weights)
+        # сортировки и сравнения производятся по ответм и грппам, но все вычисления делаются по весам
+        # Для проверки оставлены участки кода с вычислениям аналогичным по ответам, чтобы сопоставить правильность
+        # print(current_answer)
+        # print(clf_answers_weights)
+        # ans_by_grop_list = []  #не удалять, нужно для проверки в будущем
+        weight_by_grop_list = []
+        for group_i in range(len(grouping_map)):
+            # ans_by_grop = []  #не удалять, нужно для проверки
+            weight_by_grop = []
+            for ans_i in range(current_answer_array.shape[0]):
+                if current_answer_array[ans_i] in grouping_map[group_i]:
+                    # ans_by_grop.append(current_answer[ans_i])  #не удалять, нужно для проверки в будущем
+                    weight_by_grop.append(clf_answers_weights[ans_i])
+                else:
+                    # ans_by_grop.append(nan) #не удалять, нужно для проверки в будущем
+                    weight_by_grop.append(0)
+            # ans_by_grop= np.asarray(ans_by_grop) #не удалять, нужно для проверки в будущем
+            weight_by_grop = np.asarray(weight_by_grop)
+            # ans_by_grop_list.append(ans_by_grop) #не удалять, нужно для проверки в будущем
+            weight_by_grop_list.append(weight_by_grop)
+
+        result_weight = []
+        for gr_it in range(len(weight_by_grop_list)):
+            result_weight.append(sum(weight_by_grop_list[gr_it]))
+        result_ind = np.argmax(np.asarray(result_weight))
+        return result_ind
+
+    def validate_by_clf_answers_weighted(self, clf_answers, real_answers, grouping_map):
+        """
+        clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
+                        ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора
+                        clf_answers = np.vstack([[0,1,2],
+                                                 [1,2,2],
+                                                 [2,2,2],
+                                                 [3,4,3],
+                                                 [2,4,4],
+                                                 [0,0,1],
+                                                 [2,4,2]])
+        real_answers- реальные метки ответов в виде индексов групп, т.е. если были клапаны 1,2,3,4,5, которые группируются [[1,4][3,5][2]], то
+                        индекс группы   0       1     2
+                        группа        [0,1]   [3,5]  [2]
+
+            real_answers = np.asarray([0,0,0,1,1,0,0])
+
+        grouping_map - группировка в формате [[1,4][3,5][2]]
+        """
+        all_clapans = sum(grouping_map, [])
+        all_clapans.sort()
+        weight_shift = 0.3
+        weight_array = np.arange(0.1, 1.6, weight_shift)
+        weight_combinations = [p for p in product(weight_array, repeat=len(all_clapans))]
+        acc_list = []
+        comb_list = []
+        for i in range(len(weight_combinations)):
+            comb = np.asarray(weight_combinations[i])
+            cur_weight_dict = np.vstack([all_clapans, comb]).T
+            comb_result = []
+            for j in range(clf_answers.shape[0]):
+                res = self.clf_answers_to_result_weighted(clf_answers[j], grouping_map, weight_dict=cur_weight_dict)
+                comb_result.append(res)
+            num_of_true = 0
+            for i in range(len(comb_result)):
+                if comb_result[i] == real_answers[i]:
+                    num_of_true += 1
+            acc = (num_of_true / len(comb_result)) * 100
+            # print(comb,'=========>',acc)
+            acc_list.append(acc)
+            comb_list.append(comb)
+        comb_list - np.vstack(comb_list)
+        acc_list = np.asarray(acc_list)
+        return acc_list, comb_list
+
+    def test_by_clf_answers_weighted(self, clf_answers, grouping_map, clf_clapan_weights):
+        """
+        clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
+                        ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора
+                        clf_answers = np.vstack([[0,1,2],
+                                                 [1,2,2],
+                                                 [2,2,2],
+                                                 [3,4,3],
+                                                 [2,4,4],
+                                                 [0,0,1],
+                                                 [2,4,2]])
+        clf_clapan_weights = np.asarray([0.1, 0.3, 0.5, 0.7, 0.9]) для клапанов 0,1,2,3,4
+
+        grouping_map - группировка в формате [[0,3][2,4][1]]    
+        """
+        all_clapans = sum(grouping_map, [])
+        all_clapans.sort()
+        weight_dict = np.vstack([all_clapans, clf_clapan_weights]).T
+        result = []
+        for j in range(clf_answers.shape[0]):
+            res = self.clf_answers_to_result_weighted(clf_answers[j], grouping_map, weight_dict=weight_dict)
+            result.append(res)
+        return result
+
+    def convert_result_group(self, res, groups):
+        result = []
+        for i in range(len(res)):
+            for j in range(len(groups)):
+                if res[i] in groups[j]:
+                    result.append(j)
+        return np.asarray(result)
+
 
     def dataProcessing(self, batch):
         self.tick.emit(self.corrcoef_between_channels(batch), self.breathing_rate(batch))
