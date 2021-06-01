@@ -45,6 +45,11 @@ class SocketDataWorker(AbstractDataWorker):
 
                     for i in range(size_read, data.shape[0]):
                         if {data[i, -1]}.issubset(odor_labels_set.difference({self.current_label})):
+                            if i - self.last_label_index < 500:  # проверка на двойную метку
+                                # logger.info(i)
+                                # logger.info(i - self.last_label_index)
+                                data[i, -1] = 0
+                                continue
                             self.current_label = data[i, -1]
                             self.last_label_index = i
                             label = data[i, -1]
@@ -59,6 +64,10 @@ class SocketDataWorker(AbstractDataWorker):
                         with open(os.path.join(self.exp_folder, self.path_to_res + "_no_corr.dat"), 'ab') as f:
                         # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
                             np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
+
+                        size_read = data.shape[0]
+
+                        self.create_inf(self.path_to_res + "_no_corr", size_read)
 
                         # здесь скорректировать
                         data = self.correct_labels_by_groups(data)

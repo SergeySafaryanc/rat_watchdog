@@ -40,9 +40,15 @@ class FileDataWorker(AbstractDataWorker):
 
                 for i in range(size_read, data.shape[0]):
                     if {data[i, -1]}.issubset(odor_labels_set.difference({self.current_label})):
+                        if i - self.last_label_index < 500:  # проверка на двойную метку
+                            logger.info(i)
+                            logger.info(i - self.last_label_index)
+                            data[i, -1] = 0
+                            continue
                         self.current_label = data[i, -1]
                         self.last_label_index = i
                         label = data[i, -1]
+                        # logger.info(self.current_label)
                     else:
                         if data[i, -1] == 0:
                             self.current_label = -1
@@ -56,6 +62,10 @@ class FileDataWorker(AbstractDataWorker):
                     with open(os.path.join(self.exp_folder, self.path_to_res + ".dat"), 'ab') as d:
                         # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as d:
                         np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(d)
+
+                    size_read = data.shape[0]
+
+                    self.create_inf(self.path_to_res, size_read)
 
                 size_read = data.shape[0]
 
