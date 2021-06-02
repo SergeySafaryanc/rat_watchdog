@@ -7,6 +7,9 @@ from itertools import groupby, permutations, product
 import numpy as np
 import os
 
+from scipy.stats import entropy
+from tqdm import tqdm
+
 from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
 from configs.watchdog_config import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
@@ -121,7 +124,7 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         res1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))  # преобразование ответов классификаторов
         logger.info(res1)
-        result = self.test_by_clf_answers_weighted(res1, unite)  # получение ответа комитета
+        result = self.test_by_clf_answers_weighted(res1, odors_groups_valtest)  # получение ответа комитета
         logger.info(result)
 
         res = self.classifierWrapper.convert_result_log(res)
@@ -258,12 +261,12 @@ class AbstractDataWorker(QThread, ExpFolder):
             res1 = np.transpose(np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
             logger.info(res1)
 
-            weightsK, accuracyK = self.validate_by_clf_answers_weighted(res1,
-                np.asarray(labels), unite)  # получение весов
+            weightsK = self.validate_by_clf_answers_weighted(res1,
+                self.convert_result_group(labels, odors_groups_valtest),
+                odors_groups_valtest)  # получение весов
             logger.info(weightsK)
-            logger.info(accuracyK)
 
-            answers = list(self.test_by_clf_answers_weighted(res1, unite))  # получение ответов комитета и преобразование
+            answers = list(self.test_by_clf_answers_weighted(res1, odors_groups_valtest))  # получение ответов комитета и преобразование
             logger.info(answers)
             # ## конец
 
@@ -278,7 +281,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             #     self.classifierWrapper.convert_result_log(labels)))  #
         
             accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-                self.classifierWrapper.convert_result_log(labels))) * 100
+                self.classifierWrapper.convert_result_log(list(self.convert_result_group(labels, odors_groups_valtest))))) * 100
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),
@@ -502,12 +505,13 @@ class AbstractDataWorker(QThread, ExpFolder):
         """
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
-        weight_shift = 0.2
-        weight_array = np.arange(0.4, 1.3, weight_shift)
+        weight_shift = 0.1
+        weight_array = np.arange(0.4, 1.2, weight_shift)
         weight_combinations = [p for p in product(weight_array, repeat=len(all_clapans))]
         acc_list = []
         comb_list = []
-        for i in range(len(weight_combinations)):
+        comb_ans = []
+        for i in tqdm(range(len(weight_combinations))):
             comb = np.asarray(weight_combinations[i])
             cur_weight_dict = np.vstack([all_clapans, comb]).T
             comb_result = []
@@ -515,6 +519,7 @@ class AbstractDataWorker(QThread, ExpFolder):
                 res = self.clf_answers_to_result_weighted(clf_answers[j], grouping_map, weight_dict=cur_weight_dict)
                 comb_result.append(res)
             num_of_true = 0
+            comb_ans.append(np.asarray(comb_result))
             for i in range(len(comb_result)):
                 if comb_result[i] == real_answers[i]:
                     num_of_true += 1
@@ -524,10 +529,47 @@ class AbstractDataWorker(QThread, ExpFolder):
             comb_list.append(comb)
         comb_list - np.vstack(comb_list)
         acc_list = np.asarray(acc_list)
+        comb_ans = np.vstack(comb_ans)
+        comb_list = np.vstack(comb_list)
         all_best_comb = np.where(acc_list == np.amax(acc_list))[0]
-        super_best_weights = np.mean(np.vstack(comb_list)[all_best_comb], axis=0)
-        np.savetxt(fname='super_best_weights.weight', X=super_best_weights, delimiter=';')
-        return super_best_weights, np.amax(acc_list)
+        best_comb_list = comb_list[all_best_comb]
+        best_ans_comb_list = comb_ans[all_best_comb]
+        list_of_entr_for_best_comb = []
+        err_in_group_for_comb = []
+        for ans in range(best_ans_comb_list.shape[0]):
+            cur_best_ans = best_ans_comb_list[0]
+            err_arr = []
+            for a in range(cur_best_ans.shape[0]):
+                if cur_best_ans[a] != real_answers[a]:
+                    err_arr.append(real_answers[a])
+            err_arr = np.asarray(err_arr)
+            err_in_group = []
+            for gr in range(len(grouping_map)):
+                num_of_err_in_gr = 0
+                for err in range(err_arr.shape[0]):
+                    if err_arr[err] in grouping_map[gr]:
+                        num_of_err_in_gr += 1
+                err_in_group.append(num_of_err_in_gr)
+            err_in_group = np.asarray(err_in_group)
+            err_in_group_for_comb.append(err_in_group)
+            sum_of_err = sum(err_in_group)
+            prob_of_err = (err_in_group + 1) / sum_of_err
+            enntrop_for_ans = entropy(prob_of_err)
+            list_of_entr_for_best_comb.append(enntrop_for_ans)
+        list_of_entr_for_best_comb = np.asarray(list_of_entr_for_best_comb)
+        err_in_group_for_comb = np.vstack(err_in_group_for_comb)
+
+        best_comb_by_entr_id = np.where(list_of_entr_for_best_comb == np.amax(list_of_entr_for_best_comb))[0]
+        best_comb_by_entr = best_comb_list[best_comb_by_entr_id]
+        super_best_comb = best_comb_by_entr[0]
+        np.savetxt(fname='super_best_weights.weight',X=super_best_comb, delimiter=';')
+        return super_best_comb
+
+        # return comb_list,acc_list,comb_ans
+        # all_best_comb = np.where(acc_list==np.amax(acc_list))[0]
+        # super_best_weights = np.mean(np.vstack(comb_list)[all_best_comb], axis=0)
+        # np.savetxt(fname='super_best_weights.weight',X=super_best_weights, delimiter=';')
+        # return super_best_weights, np.amax(acc_list), comb_ans
 
     def test_by_clf_answers_weighted(self, clf_answers, grouping_map):
         """
@@ -554,13 +596,24 @@ class AbstractDataWorker(QThread, ExpFolder):
             result.append(res)
         return np.asarray(result)
 
-    # def convert_result_group(self, res, groups):
-    #     result = []
-    #     for i in range(len(res)):
-    #         for j in range(len(groups)):
-    #             if res[i] in groups[j]:
-    #                 result.append(j)
-    #     return np.asarray(result)
+    def convert_units_to_groups(self, val_real_ans_by_clapan_id, grouping_map):
+        ans_by_group = []
+        for ans_it in range(val_real_ans_by_clapan_id.shape[0]):
+            ans = val_real_ans_by_clapan_id[ans_it]
+            for group in range(len(grouping_map)):
+                if ans in grouping_map[group]:
+                    converted_ans = group
+                    ans_by_group.append(converted_ans)
+        ans_by_group = np.asarray(ans_by_group)
+        return ans_by_group
+
+    def convert_result_group(self, res, groups):
+        result = []
+        for i in range(len(res)):
+            for j in range(len(groups)):
+                if res[i] in groups[j]:
+                    result.append(j)
+        return np.asarray(result)
 
 
     def dataProcessing(self, batch):
