@@ -423,18 +423,18 @@ class AbstractDataWorker(QThread, ExpFolder):
                     .format(num_channels, nNSamplings, sampling_rate,
                             "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
 
-    # def correct_labels_by_groups(self, data):
-    #     for group in odors_unite:  # просматриваем в цикле группы
-    #         if len(group) == 1:  # если число элементов в группе равно одному
-    #             continue  # пропускаем
-    #         for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
-    #             data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
-    #     # for i in range(data.shape[0]):  # для всех меток клапанов
-    #     #     if data[i, -1] != 0:  # если метка не нулевая
-    #     #         for group in odors_unite:  # просматриваем в цикле группы
-    #     #             if data[i, -1] in group:  # если принадлежит группе
-    #     #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
-    #     return data
+    def correct_labels_by_groups(self, data):
+        for group in odors_unite:  # просматриваем в цикле группы
+            if len(group) == 1:  # если число элементов в группе равно одному
+                continue  # пропускаем
+            for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
+                data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
+        # for i in range(data.shape[0]):  # для всех меток клапанов
+        #     if data[i, -1] != 0:  # если метка не нулевая
+        #         for group in odors_unite:  # просматриваем в цикле группы
+        #             if data[i, -1] in group:  # если принадлежит группе
+        #                 data[i, -1] = group[0]  # присваиваем метку первого элемента группы
+        return data
 
     def clf_answers_to_result_weighted(self, current_answer_array, grouping_map, weight_dict):
         """
@@ -563,6 +563,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         best_comb_by_entr = best_comb_list[best_comb_by_entr_id]
         super_best_comb = best_comb_by_entr[0]
         np.savetxt(fname='super_best_weights.weight',X=super_best_comb, delimiter=';')
+        np.savetxt(fname=str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_super_best_weights.weight"))
+                   ,X=super_best_comb, delimiter=';')
         return super_best_comb
 
         # return comb_list,acc_list,comb_ans
