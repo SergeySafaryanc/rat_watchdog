@@ -19,7 +19,7 @@ class QtWatchdogController(ExpFolder):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
         Singleton.set("Метки веществ", dict(zip([o[0] for o in odors_unite], [i[0] for i in odors])))
-        Singleton.set("Веса", weights)
+        # Singleton.set("Веса", weights)
 
         super().__init__()
         self.channel_pairs = list(combinations(np.arange(0, num_of_channels), 2))

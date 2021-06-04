@@ -164,31 +164,31 @@ class AbstractDataWorker(QThread, ExpFolder):
     #
     #     return [result_val, res]
 
-    def get_result_old(self, res): # устарело
-        x = pd.Series(res)
-        # logger.info(x)
-        x = x.value_counts()
-        # logger.info(x)
-        ind = x[x == x.max()].index
-        # logger.info(ind)
-        if len(ind) > 1:
-            if 1 in ind:
-                return 1
-            else:
-                return 0
-        else:
-            return ind[0]
+    # def get_result_old(self, res): # устарело
+    #     x = pd.Series(res)
+    #     # logger.info(x)
+    #     x = x.value_counts()
+    #     # logger.info(x)
+    #     ind = x[x == x.max()].index
+    #     # logger.info(ind)
+    #     if len(ind) > 1:
+    #         if 1 in ind:
+    #             return 1
+    #         else:
+    #             return 0
+    #     else:
+    #         return ind[0]
 
-    def get_result(self, res):
-        x = pd.Series(res)
-        # logger.info(x)
-        x = x.value_counts()
-        # logger.info(x)
-        x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
-        # logger.info(x)
-        ind = x[x == x.max()].index
-        # logger.info(ind)
-        return ind[0]
+    # def get_result(self, res): # устарело
+    #     x = pd.Series(res)
+    #     # logger.info(x)
+    #     x = x.value_counts()
+    #     # logger.info(x)
+    #     x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
+    #     # logger.info(x)
+    #     ind = x[x == x.max()].index
+    #     # logger.info(ind)
+    #     return ind[0]
 
     def corrcoef_between_channels(self, data):
         return [abs(np.corrcoef((data[:, pair[0]], data[:, pair[1]]))[0][1]) for pair in
@@ -265,6 +265,7 @@ class AbstractDataWorker(QThread, ExpFolder):
                 self.convert_result_group(labels, odors_groups_valtest),
                 odors_groups_valtest)  # получение весов
             logger.info(weightsK)
+            Singleton.set("Веса", weightsK)
 
             answers = list(self.test_by_clf_answers_weighted(res1, odors_groups_valtest))  # получение ответов комитета и преобразование
             logger.info(answers)
