@@ -504,6 +504,9 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         grouping_map - группировка в формате [[1,4][3,5][2]]    
         """
+        logger.info(clf_answers)
+        logger.info(real_answers)
+        logger.info(grouping_map)
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
         weight_shift = 0.1
@@ -554,7 +557,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             err_in_group = np.asarray(err_in_group)
             err_in_group_for_comb.append(err_in_group)
             sum_of_err = sum(err_in_group)
-            prob_of_err = (err_in_group + 1) / sum_of_err
+            prob_of_err = (err_in_group + 1) / (sum_of_err+1)
             enntrop_for_ans = entropy(prob_of_err)
             list_of_entr_for_best_comb.append(enntrop_for_ans)
         list_of_entr_for_best_comb = np.asarray(list_of_entr_for_best_comb)
