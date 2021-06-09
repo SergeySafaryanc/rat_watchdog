@@ -23,8 +23,6 @@ num_counter_for_refresh_animal = num_clapans*44  # количество стим
 count_train_stimuls = num_clapans*25  # число тренировок
 train_step = num_clapans*5  # число смещений (кол-во клапанов * 5)
 
-test_step = 100
-
 data_source_is_file = True  # выбор датасорса, true - file, false - socket
 is_result_validation = True  # не трогать (типа валидация, кол-во правильных из скольких)
 

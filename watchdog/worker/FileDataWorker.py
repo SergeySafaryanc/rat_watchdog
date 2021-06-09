@@ -96,7 +96,7 @@ class FileDataWorker(AbstractDataWorker):
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
                                          self.classifierWrapper.convert_result(self.labels_map[label]))
                     self.counter += 1
-                    if self.counter == test_step:  # количество подач на тест
+                    if self.counter == 100:  # количество подач на тест
                         self.stop()
 
                 self.last_label_index = 0
