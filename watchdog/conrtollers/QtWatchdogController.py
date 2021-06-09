@@ -2,6 +2,7 @@ import os
 
 from watchdog.utils import vk_bot
 from watchdog.worker.AbstractDataWorker import ExpFolder
+from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from watchdog.worker.FileDataWorker import FileDataWorker
 from watchdog.worker.MainWorker import MainWorker
 from watchdog.gui.GUI import GUI
@@ -89,16 +90,28 @@ class QtWatchdogController(ExpFolder):
         #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
         #     f.write('\n')
 
+        # вывод ответов по всем классификаторам и предикта по комитету в виде меток
+        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
+                              str(label)]))
+            f.write('\n')
+
+        # преобразование ответов классификаторов
+        logger.info(resСlassifiers)
+        resСlassifiers = self.convert_result_group(resСlassifiers, odors_groups_valtest)
+        logger.info(resСlassifiers)
+        # преобразование ответа комитета
+        logger.info(label)
+        label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odors_groups_valtest)[0]
+        logger.info(label)
+        # преобразование общего массива
+        results = [result, resСlassifiers]
+
         # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
         # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
             f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message,
                               odors[int(label)][0]]))
-            f.write('\n')
-        # вывод ответов по всем классификаторам и предикта по комитету в виде меток
-        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
-                              str(label)]))
             f.write('\n')
 
         message = "%i. %s" % (self.resultsCounter, message)
@@ -187,4 +200,12 @@ class QtWatchdogController(ExpFolder):
         worker.resultTest.connect(self.onResultTest)
         worker.resultTrain.connect(self.onResultTrain)
         worker.sendMessage.connect(self.sendMessage)
+
+    def convert_result_group(self, res, groups):  # конвертация для ВАЛИДАЦИИ ПО ГРУППАМ для выбора весов
+        result = []
+        for i in range(len(res)):
+            for j in range(len(groups)):
+                if res[i] in groups[j]:
+                    result.append(j)
+        return np.asarray(result)
 

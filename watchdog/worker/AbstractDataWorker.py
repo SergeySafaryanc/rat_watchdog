@@ -424,7 +424,7 @@ class AbstractDataWorker(QThread, ExpFolder):
                     .format(num_channels, nNSamplings, sampling_rate,
                             "\n".join(map(lambda x: str(x) + "=" + str(x + 1), range(num_channels)))))
 
-    def correct_labels_by_groups(self, data):
+    def correct_labels_by_groups(self, data):  # конвертация для ОБУЧЕНИЯ ПО ГРУППАМ
         for group in odors_unite:  # просматриваем в цикле группы
             if len(group) == 1:  # если число элементов в группе равно одному
                 continue  # пропускаем
@@ -602,7 +602,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             result.append(res)
         return np.asarray(result)
 
-    def convert_units_to_groups(self, val_real_ans_by_clapan_id, grouping_map):
+    def convert_units_to_groups(self, val_real_ans_by_clapan_id, grouping_map):  # Колина конвертация для выбора весов
         ans_by_group = []
         for ans_it in range(val_real_ans_by_clapan_id.shape[0]):
             ans = val_real_ans_by_clapan_id[ans_it]
@@ -613,7 +613,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         ans_by_group = np.asarray(ans_by_group)
         return ans_by_group
 
-    def convert_result_group(self, res, groups):
+    def convert_result_group(self, res, groups):  # конвертация для ВАЛИДАЦИИ ПО ГРУППАМ для выбора весов
         result = []
         for i in range(len(res)):
             for j in range(len(groups)):
