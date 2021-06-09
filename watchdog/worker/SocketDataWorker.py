@@ -42,7 +42,7 @@ class SocketDataWorker(AbstractDataWorker):
 
                     data = np.vstack(
                         (data, self.decimate(np.copy(buffer)[:, :num_channels], k=self.decimate_rate, method='')))
-
+                    # print(data.shape)
                     for i in range(size_read, data.shape[0]):
                         if {data[i, -1]}.issubset(odor_labels_set.difference({self.current_label})):
                             if i - self.last_label_index < 500:  # проверка на двойную метку
@@ -57,7 +57,8 @@ class SocketDataWorker(AbstractDataWorker):
                             if data[i, -1] == 0:
                                 self.current_label = -1
                             data[i, -1] = 0
-                        # logger.info(self.current_label)
+                        # if self.current_label != -1:
+                        #     logger.info(self.current_label)
 
                     if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
                         # здесь сохранить no_corr
