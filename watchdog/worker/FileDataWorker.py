@@ -59,13 +59,13 @@ class FileDataWorker(AbstractDataWorker):
                     # здесь скорректировать
                     data = self.correct_labels_by_groups(data)
                     # сохранить как .dat
-                    with open(os.path.join(self.exp_folder, self.path_to_res + ".dat"), 'ab') as d:
+                    with open(os.path.join(self.exp_folder, self.path_to_res + "_no_corr.dat"), 'ab') as d:
                         # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as d:
                         np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(d)
 
                     size_read = data.shape[0]
 
-                    self.create_inf(self.path_to_res, size_read)
+                    self.create_inf(self.path_to_res + "_no_corr", size_read)
 
                 size_read = data.shape[0]
 
@@ -96,7 +96,7 @@ class FileDataWorker(AbstractDataWorker):
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
                                          self.classifierWrapper.convert_result(self.labels_map[label]))
                     self.counter += 1
-                    if self.counter == 100:  # количество подач на тест
+                    if self.counter == 250:  # количество подач на тест
                         self.stop()
 
                 self.last_label_index = 0

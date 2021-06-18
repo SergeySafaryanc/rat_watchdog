@@ -509,7 +509,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(grouping_map)
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
-        weight_shift = 0.1
+        weight_shift = 0.2
         weight_array = np.arange(0.4, 1.2, weight_shift)
         weight_combinations = [p for p in product(weight_array, repeat=len(all_clapans))]
         acc_list = []
