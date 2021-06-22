@@ -286,7 +286,7 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
                    np.transpose(val_res),
-                   fmt="%d")  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
+                   fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
 
         return accuracy
 
@@ -509,8 +509,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(grouping_map)
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
-        weight_shift = 0.2
-        weight_array = np.arange(0.4, 1.2, weight_shift)
+        weight_shift = 0.1
+        weight_array = np.arange(1, 1.1, weight_shift)
         weight_combinations = [p for p in product(weight_array, repeat=len(all_clapans))]
         acc_list = []
         comb_list = []
@@ -566,9 +566,10 @@ class AbstractDataWorker(QThread, ExpFolder):
         best_comb_by_entr_id = np.where(list_of_entr_for_best_comb == np.amax(list_of_entr_for_best_comb))[0]
         best_comb_by_entr = best_comb_list[best_comb_by_entr_id]
         super_best_comb = best_comb_by_entr[0]
+        super_best_comb = np.asarray(weights_filler)  # заглушка для сохранения одинаковых весов
         np.savetxt(fname='super_best_weights.weight',X=super_best_comb, delimiter=';')
         np.savetxt(fname=str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_super_best_weights.weight"))
-                   ,X=super_best_comb, delimiter=';')
+                   , X=super_best_comb, delimiter=';')
         return super_best_comb
 
         # return comb_list,acc_list,comb_ans
