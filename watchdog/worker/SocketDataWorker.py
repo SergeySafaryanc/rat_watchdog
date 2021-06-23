@@ -61,14 +61,10 @@ class SocketDataWorker(AbstractDataWorker):
                         #     logger.info(self.current_label)
 
                     if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
-                        # здесь сохранить no_corr
+                        # здесь сохранить no_corr.dat
                         with open(os.path.join(self.exp_folder, self.path_to_res + "_no_corr.dat"), 'ab') as f:
                         # with open(os.path.join(out_path, self.path_to_res + ".dat"), 'ab') as f:
                             np.copy(data[size_read:]).reshape(-1).astype('int16').tofile(f)
-
-                        size_read = data.shape[0]
-
-                        self.create_inf(self.path_to_res + "_no_corr", size_read)
 
                         # здесь скорректировать
                         data = self.correct_labels_by_groups(data)
@@ -80,6 +76,11 @@ class SocketDataWorker(AbstractDataWorker):
 
                     size_read = data.shape[0]
 
+                    if is_train and (len(odors_unite) != len(list(chain(*odors_unite)))):
+                        # здесь сохранить no_corr.inf
+                        self.create_inf(self.path_to_res + "_no_corr", size_read)
+
+                    # сохранить .inf
                     self.create_inf(self.path_to_res, size_read)
 
                     # for test.py
