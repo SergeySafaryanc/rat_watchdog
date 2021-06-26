@@ -70,7 +70,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
-    resultTest = pyqtSignal(str, int, object, int, object, int)
+    resultTest = pyqtSignal(str, int, object, object)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
@@ -120,7 +120,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(f"labels_map_2: {self.labels_map_2}")
 
     def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "_0_selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "0_selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
 
@@ -140,7 +140,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         return [result[0], res]
 
     def predict1(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "_1_selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "1_selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper1.predict(block)
         resS = self.classifierWrapper1.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
 
@@ -193,13 +193,12 @@ class AbstractDataWorker(QThread, ExpFolder):
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
         logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
-        # Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{res}")
+        Singleton.set("Точность на валидации(0)", f"{Singleton.get('Точность на валидации(0)')}\n{res}")
         write(Singleton.text())
 
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_0_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
         selected_classifiers = self.select_ter(res)
-        # logger.info(selected_classifiers)  #
         np.savetxt(str(os.path.join(self.exp_folder,
                                     f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_0_selected_classifiers.csv")),
                    np.array(selected_classifiers),
@@ -234,7 +233,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_0_valid_answers.csv")),
             np.transpose(val_res),
             fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
-        train_accuracy.update({"MEAN_0": accuracy})
+        # train_accuracy.update({"MEAN_0": accuracy})
         return accuracy
 
     def train1(self, path, stop=True):
@@ -253,6 +252,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             np.array(self.classifierWrapper1.convert_result_log(r[1])) == self.classifierWrapper1.convert_result_log(
                 labels)) * 100) for r in res]
         logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
+        Singleton.set("Точность на валидации(1)", f"{Singleton.get('Точность на валидации(1)')}\n{res}")
         write(Singleton.text())
         np.savetxt(os.path.join(self.exp_folder, self.time_now + "_1_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select_ter(res)
@@ -290,7 +290,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_1_valid_answers.csv")),
             np.transpose(val_res),
             fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
-        train_accuracy.update({"MEAN_1": accuracy})
+        # train_accuracy.update({"MEAN_1": accuracy})
         return accuracy
 
     def validation_train(self, data):
@@ -303,26 +303,16 @@ class AbstractDataWorker(QThread, ExpFolder):
         self.create_inf(self.path_to_res + "_0_val", data.shape[0])
         self.create_inf(self.path_to_res + "_1_val", data.shape[0])
 
-        # t2 = threading.Thread(target=self.train, args=(train_file_path1, data_source_is_file,))
-        t1 = threading.Thread(target=self.train1, args=(train_file_path2, data_source_is_file,))
+        acc_1 = self.train(train_file_path1, data_source_is_file)
+        acc_2 = self.train1(train_file_path2, data_source_is_file)
 
-        # t2.start()
-        # time.sleep(1.5)
-        t1.start()
-
-        # t2.join()
-        t1.join()
-
-        print("MEAN:\t" + str(train_accuracy))
-        breakpoint()
-
-        self.accuracy_1.append(train_accuracy.get("MEAN_0"))
-        self.accuracy_2.append(train_accuracy.get("MEAN_1"))
+        self.accuracy_1.append(acc_1)
+        self.accuracy_2.append(acc_2)
         with open(os.path.join(self.exp_folder, self.time_now + "_0_res.txt"), 'a+') as f:
-            f.write(str(train_accuracy.get("MEAN_0")))
+            f.write(str(acc_1))
             f.write('\n')
         with open(os.path.join(self.exp_folder, self.time_now + "_1_res.txt"), 'a+') as f:
-            f.write(str(train_accuracy.get("MEAN_1")))
+            f.write(str(acc_2))
             f.write('\n')
 
         if (self.accuracy_2[-1] >= acc_need or (

@@ -1,15 +1,14 @@
 import math
-from sys import path as pylib
 import os
-from configs.watchdog_config import pylib_path1, unite_test_2
-
-pylib += [os.path.abspath(pylib_path1)]
-from rat1 import *
-
+from sys import path as pylib
 from loguru import logger
 
+from configs.watchdog_config import pylib_path1, unite_test_2
+pylib += [os.path.abspath(pylib_path1)]
+import rat_2
 
 class ClassifierWrapper1:
+
     def __init__(self, num_channels=16, odors=[1, 2, 4, 8, 16], unite=[[1, 2], [4, 8], [16]], decimate=1):
         """
 
@@ -36,10 +35,10 @@ class ClassifierWrapper1:
         logger.info("<<<<<<<<<<<<<<<<<")
         logger.info(self.odors)
         logger.info(">>>>>>>>>>>>>>>>")
-        return classifier(data, self.num_channels, self.odors, [], self.decimate)
+        return rat_2.classifier(data, self.num_channels, self.odors, [], self.decimate)
 
     def train(self, file_name):
-        return train(file_name, self.num_channels, self.odors, [], self.decimate)
+        return rat_2.train(file_name, self.num_channels, self.odors, [], self.decimate)
 
     def convert_result(self, label):
         for j in range(len(self.unite_test)):

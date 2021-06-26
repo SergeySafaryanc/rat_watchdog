@@ -94,10 +94,10 @@ class FileDataWorker(AbstractDataWorker):
                     if self.is_test_started:
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
-                    self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(self.labels_map[label]),
-                                         self.predict1(block),
-                                         self.classifierWrapper1.convert_result(self.labels_map_2.get(label, -1)))
+                    self.resultTest.emit(self.name, self.counter, [self.predict(block), self.predict1(block)],
+                                         self.classifierWrapper.convert_result(self.labels_map[label]))
+                                         # self.predict1(block),
+                                         # self.classifierWrapper1.convert_result(self.labels_map_2.get(label, 0)))
                     self.counter += 1
                     if self.counter == 250:  # количество подач на тест
                         self.stop()

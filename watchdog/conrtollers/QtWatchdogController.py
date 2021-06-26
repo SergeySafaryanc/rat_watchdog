@@ -69,38 +69,88 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
-    def onResultTest(self, name, i, results, label, results1, label1):
-        print(f"R_L(0): {results}\t{label}")
-        print(f"R_L(1): {results1}\t{label1}")
+    def onResultTest(self, name, i, results, label):
+        print(f"results: {results}")
+        print(f"label: {label}")
+
+        # if results[0][0] == 0:
+        if label == 0:
+            result, resСlassifiers = results[1]
+            _odors = odors_2[int(result)]
+            message, color = _odors
+            odv = odors_groups_valtest_2
+            label = result
+        else:
+            result, resСlassifiers = results[0]
+            _odors = odors[int(result)]
+            message, color = _odors
+            odv = odors_groups_valtest
+            label = 1
+
+        # result, resСlassifiers = results[0] if results[0][0] != 1 else results[1]
+
+        # breakpoint()
+        # print(o)
         self.resultsCounter += 1
-        result, resСlassifiers = results
-        message, color = odors[int(result)]
+        # result, resСlassifiers = results if label1 == 8887232 else results1
+        # message, color = odors[int(result)] if label1 == 8887232 else odors_2[int(result)]
+        # odv = odors_groups_valtest if label1 == 8887232 else odors_groups_valtest_2
+
+        print(f"""
+        
+            result, resСlassifiers := {str(result)}, {str(resСlassifiers)}\n
+            message, color := {str(message)}, {str(color)}\n
+            odv := {str(odv)}
+        """)
+
+        # selected_index = 1 if label == 0 else 0
+        # result, resClassifiers = o[selected_index]["results"]
+        # message, color = o[selected_index]["odors"][label1 if label1 != 8887232 else label]
+        # message, color = o[selected_index]["odors"][label1 if label1 != 8887232 else label]
+        # label = o[selected_index]["label"]
+        # message, color = o[selected_index]["odors"][label]
+        # odv = o[selected_index]["odv"]
+        # print(message)
+        # breakpoint()
+
+
+
+        # result, resСlassifiers = results
+        # message, color = odors[int(result)]
         # если на message == ЦВ
-        if message == odors[0][0]:
-            result, resСlassifiers = results1
-            message, color = odors_2[int(result)]
-        print(f"Вывод на экран: {message}")
+        # if message == odors[0][0]:
+        #     result, resСlassifiers = results1
+        #     message, color = odors_2[int(result)]
+        # print(f"Вывод на экран: {message}")
 
         # вывод ответов по всем классификаторам и предикта по комитету в виде меток
-        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
-                              str(label)]))
-            f.write('\n')
+        # with open(os.path.join(self.exp_folder, name + '_0_responses_classifiers_and_result_labels.csv'), 'a+') as f:
+        #     f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: str(x), resСlassifiers)), str(result),
+        #                       str(label)]))
+        #     f.write('\n')
 
-        logger.info(resСlassifiers)
-        resСlassifiers = self.convert_result_group(resСlassifiers, odors_groups_valtest)
-        logger.info(resСlassifiers)
+        # logger.info(resСlassifiers)
+        resClassifiers = self.convert_result_group(resСlassifiers, odv)
+        # logger.info(resСlassifiers)
         # преобразование ответа комитета
-        logger.info(label)
-        label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odors_groups_valtest)[0]
-        logger.info(label)
+        # logger.info(label)
+        label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odv)[0]
+        # logger.info(label)
         # преобразование общего массива
-        results = [result, resСlassifiers]
-
+        results = [result, resClassifiers]
+        # print(label)
+        # print(o[selected_index]["odors"])
+        # print(o[selected_index]["odors"][int(label)][0])
+        # print(o[selected_index]["odors"])
+        # print(list(map(lambda x: o[selected_index]["odors"][x][0], resClassifiers)))
+        # breakpoint()
         # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
-        with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
-            f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message,
-                              odors[int(label)][0]]))
+        with open(os.path.join(self.exp_folder, name + '_0_responses_classifiers_and_result.csv'), 'a+') as f:
+            f.write(';'.join([str(self.resultsCounter),
+                              ";".join(list(map(lambda x: _odors[x][0], resClassifiers))),
+                              message,
+                              str(_odors[int(label)][0])]
+                             ))
             f.write('\n')
 
         message = "%i. %s" % (self.resultsCounter, message)
@@ -197,3 +247,22 @@ class QtWatchdogController(ExpFolder):
         resСlassifiers = self.convert_result_group(rc, odv)
         label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odv)[0]
         return label, resСlassifiers
+
+    # def select_odor(self, odors: list, results: list, labels: list, results1, label1):
+    # def select_odor(self, o: list, default_odor=odors[0][0]):
+    #     """
+    #     o = [{
+    #         "odors": (str, str),
+    #         "results": list[int, list[int]],
+    #         "label": int,
+    #         "odv": list[]
+    #     }]
+    #     """
+    #
+    #     print(f"Вывод на экран: {message}")
+    #     return dict(
+    #         result=result,
+    #         message=message,
+    #         resClassifiers=self.convert_result_group(res_classifiers, odv),
+    #         label=self.convert_result_group(np.atleast_1d(np.asarray(label)), odv)[0]
+    #     )
