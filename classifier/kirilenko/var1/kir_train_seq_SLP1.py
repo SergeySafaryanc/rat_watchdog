@@ -1,3 +1,4 @@
+# from classifier.kirilenko.kir_test_seq_SLP1 import pearson_corr_for_2d_signal
 # from configs.watchdog_config import *
 from configs.watchdog_config import *
 import numpy as np
@@ -6,7 +7,9 @@ import datetime
 import math
 import scipy.signal
 from sklearn import tree
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
+
 from sklearn.svm import SVC
 from itertools import combinations
 from tqdm import tqdm
@@ -19,12 +22,11 @@ from scipy.stats import trim_mean
 import sys
 import logging
 import pickle
-from sklearn.preprocessing import StandardScaler,MinMaxScaler,MaxAbsScaler,RobustScaler,PowerTransformer,Normalizer
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 logging.getLogger("numpy").setLevel(logging.WARNING)
 logging.getLogger("sklearn").setLevel(logging.WARNING)
 
 np.random.seed(42)
+
 
 def get_time_stamp(verbose=0):
     time=datetime.datetime.now().timetuple()
@@ -73,7 +75,7 @@ class Clapan:
     def __init__(self, clapan_label, clapan_index,clapan_length,prestimul_length,stimul_delay):
         self.clapan_label = clapan_label
         self.clap_real_number = math.log(clapan_label,2)+1
-        bin_clapan_label = np.asarray([int(x) for x in bin(int(self.clapan_label))[2:]])[::-1]
+        bin_clapan_label = np.asarray([int(x) for x in bin(self.clapan_label)[2:]])[::-1]
         self.clap_real_number = np.where(bin_clapan_label>0)[0]+1
         self.openning_ind = clapan_index
         self.prestimul_opening = self.openning_ind-prestimul_length
@@ -99,6 +101,7 @@ def read_dat_by_clapans(data, clapan_length=5000,prestimul_length=0,stimul_delay
     labels_ch = data[:,-1]
     unique_clapans = np.unique(labels_ch)
     unique_clapans = np.delete(unique_clapans, np.where(unique_clapans == 0))
+    print(unique_clapans)
     # if air_clapan==True:
     #     if using_air_clapan==True:
     #         unique_clapans = np.unique(labels_ch)[1:]
@@ -211,22 +214,72 @@ def difference_2d_stimul_features(input_data,input_clapan, feature_type='Slope_o
     return clapan_sample
 
 
-def tst_Spl_original_signal(data,SamplingFrequency):
+def slope_original_signal(data):
+    train_data, train_clapans, Fd = data
+    print('Подготовка признаков')
+    train_dataset = []
+    for clapan in tqdm(train_clapans):
+        features =difference_2d_stimul_features(input_data=train_data[:,:-2],input_clapan=clapan, feature_type='Slope_original_signal', normirovka = False,Fd=Fd)
+        train_dataset.append(features)
+    raw_train_dataset=np.vstack(train_dataset)
+    print(raw_train_dataset[:,-1])
+    train_classes = np.sort(np.asarray(sum(mixture_groups_2, [])))
+    usd_train_samples = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==usd_class_it)[0] for usd_class_it in train_classes]))
+    raw_train_dataset = raw_train_dataset[usd_train_samples,:]
+    raw_labels = np.copy(raw_train_dataset[:,-1])
+    for train_group_it in range(len(mixture_groups_2)):
+        train_group = mixture_groups_2[train_group_it]
+        idxs_of_train_group = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==clapan_it)[0] for clapan_it in train_group]))
+        for sample in idxs_of_train_group:
+            raw_labels [sample]= train_group_it+1
+    train_features = raw_train_dataset[:,:-1]
+    train_labels = raw_labels
+    clf7 = GradientBoostingClassifier(loss='deviance', learning_rate=0.012,n_estimators=50,subsample=0.2,criterion='friedman_mse',min_samples_split=3,max_depth=3,random_state=42)
+    clf7.fit(train_features,train_labels)
+    model_filename = KIR_OUT_SLP_2
+    pickle.dump(clf7, open(model_filename, 'wb'))
+    print('Model was trained')
 
-    test_data, test_clapans = read_dat_by_clapans(data, clapan_length=clapan_length,prestimul_length=prestimul_length,stimul_delay=stimul_delay)
-    test_dataset = []
-    for clapan in test_clapans:
-        features =difference_2d_stimul_features(input_data=test_data[:,:-2],input_clapan=clapan, feature_type='Slope_original_signal', normirovka = False,Fd=SamplingFrequency)
-        test_dataset.append(features)
-    test_dataset=np.vstack(test_dataset)
-    test_features = test_dataset[:,:-1]
-    test_labels = test_dataset[:,-1]
-    model_filename = KIR_OUT_LDA_1
-    loaded_model = pickle.load(open(model_filename, 'rb'))
-    result_loaded = loaded_model.predict(test_features)
-    if test_labels.shape[0]>1:
-        output = result_loaded
-    else:
-        output = result_loaded[0]
-    print(f"Labels: {test_labels}\tOutput: {output}")
-    return output-1
+
+def slope_original_signal_val_last(data):
+    train_data, train_clapans, Fd = data
+    test_procent = 0.15
+    train_dataset = []
+    for clapan in tqdm(train_clapans):
+        features =difference_2d_stimul_features(input_data=train_data[:,:-2],input_clapan=clapan, feature_type='Slope_original_signal', normirovka = False,Fd=Fd)
+        train_dataset.append(features)
+    raw_train_dataset=np.vstack(train_dataset)
+    train_classes = np.sort(np.asarray(sum(mixture_groups_2, [])))
+    usd_train_samples = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==usd_class_it)[0] for usd_class_it in train_classes]))
+    raw_train_dataset = raw_train_dataset[usd_train_samples,:]
+    raw_labels = np.copy(raw_train_dataset[:,-1])
+    for train_group_it in range(len(mixture_groups_2)):
+        train_group = mixture_groups_2[train_group_it]
+        idxs_of_train_group = np.sort(np.concatenate([np.where(raw_train_dataset[:,-1]==clapan_it)[0] for clapan_it in train_group]))
+        for sample in idxs_of_train_group:
+            raw_labels [sample]= train_group_it+1
+    all_features = raw_train_dataset[:,:-1]
+    all_labels = raw_labels
+    test_num = int(np.round(all_labels.shape[0] * test_procent))
+    train_num = all_labels.shape[0] - test_num
+    train_features = all_features[:train_num, :]
+    train_labels = all_labels[:train_num]
+    val_features = all_features[train_num:, :]
+    val_labels = all_labels[train_num:]
+    clf8 = GradientBoostingClassifier(loss='deviance', learning_rate=0.012, n_estimators=50, subsample=0.2,
+                                      criterion='friedman_mse', min_samples_split=3, max_depth=3, random_state=42)
+    clf8.fit(train_features, train_labels)
+    sc = clf8.predict(val_features).astype(int)
+    sc -= 1
+    return (6, sc)
+
+
+def train(filename):
+    data_matrx,SamplingFrequency = read_dat(filename)
+    data, clapans_obj_list = read_dat_by_clapans(data_matrx, clapan_length=clapan_length, prestimul_length=prestimul_length, stimul_delay=stimul_delay)
+    slope_original_signal([data_matrx,clapans_obj_list,1000])
+    return slope_original_signal_val_last([data_matrx,clapans_obj_list,1000])
+
+if __name__ == "__main__":
+    train_path = sys.argv[1]
+    train(train_path)

@@ -1,6 +1,7 @@
+import time
 from datetime import datetime
 import threading
-
+import shutil
 from PyQt5.QtCore import QThread, pyqtSignal
 import pandas as pd
 from itertools import groupby, permutations, product
@@ -11,14 +12,17 @@ from scipy.stats import entropy
 from tqdm import tqdm
 
 from classifier.kirilenko.KirClassifierWrapper import KirClassifierWrapper
+from classifier.kirilenko.var1.KirClassifierWrapper import KirClassifierWrapper1
 from configs.watchdog_config import *
 from classifier.shepelev.ClassifierWrapper import ClassifierWrapper
+from classifier.shepelev.ClassifierWrapper1 import ClassifierWrapper1
 
-# from watchdog.utils.readme import readme
 from loguru import logger
 from itertools import chain
 
 from watchdog.utils.readme import Singleton, write
+
+train_accuracy = {}
 
 
 class TimeInstance(object):
@@ -66,7 +70,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
-    resultTest = pyqtSignal(str, int, object, int)
+    resultTest = pyqtSignal(str, int, object, int, object, int)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
@@ -74,16 +78,12 @@ class AbstractDataWorker(QThread, ExpFolder):
     def __init__(self, bytes_to_read, decimate_rate, channel_pairs, path_to_res, train_flag):
         super().__init__()
 
-        # readme(is_first=True)
-
-        # self.time_now = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-        # self.__exp_folder = f"{out_path}/{self.time_now}"
-        # if os.path.exists(self.__exp_folder) is False:
-        #     os.mkdir(self.__exp_folder)
-        #     logger.debug(f"Folder - {self.__exp_folder} created")
-
         self.classifierWrapper = ClassifierWrapper(num_channels=num_channels - 2, odors=odors_unite, unite=unite)
         self.kirClassifierWrapper = KirClassifierWrapper()
+
+        self.classifierWrapper1 = ClassifierWrapper1(num_channels=num_channels - 2, odors=odors_unite_2, unite=unite_2)
+        self.kirClassifierWrapper1 = KirClassifierWrapper1()
+
         self.bytes_to_read = bytes_to_read
         self.counter = 0
         self.decimate_rate = decimate_rate
@@ -94,38 +94,44 @@ class AbstractDataWorker(QThread, ExpFolder):
         self.last_corr_index = 0
         # вся запись
         self.record = np.array([])
+
         self.current_label = -1
+
         self.channel_pairs = channel_pairs
         self.path_to_res = path_to_res
-        self.accuracy = []
+        self.accuracy_1 = []
+        self.accuracy_2 = []
         self.train_flag = train_flag
+
         if not data_source_is_file:
             self.path_to_res = self.path_to_res + "_" + self.time_now
 
-        self.labels_map = {}  # новое автоматическое задание labels_map
+        self.labels_map = {}
         for i in list(chain(*odors_unite)):
             for j in range(len(odors_unite)):
                 if i in odors_unite[j]:
                     self.labels_map[i] = j
-        logger.info(f"labels_map: {self.labels_map}")
+        logger.info(f"labels_map_1: {self.labels_map}")
+        self.labels_map_2 = {}
+        for i in list(chain(*odors_unite_2)):
+            for j in range(len(odors_unite_2)):
+                if i in odors_unite_2[j]:
+                    self.labels_map_2[i] = j
+        logger.info(f"labels_map_2: {self.labels_map_2}")
 
     def predict(self, block):
-        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
-        # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
+        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "_0_selected_classifiers.csv"), delimiter=",")
         resK = self.kirClassifierWrapper.predict(block)
         resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
+
         logger.info(f"K: {str(resK)}")
         logger.info(f"S: {str(resS)}")
         res = np.concatenate((resS, resK), axis=None)
         logger.info(f"res before: {str(res)}")
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
-        # result = self.get_result(np.array([res[int(i)] for i in selected_classifiers])) # старое получение результата
-
-        res1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))  # преобразование ответов классификаторов
-        logger.info(res1)
-        result = self.test_by_clf_answers_weighted(res1, odors_groups_valtest)  # получение ответа комитета
-        logger.info(result)
+        res_1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))
+        result = self.test_by_clf_answers_weighted(res_1, SP_WEIGHT_1, odors_groups_valtest)  # получение ответа комитета
 
         res = self.classifierWrapper.convert_result_log(res)
         logger.info(f"res after: {res}")
@@ -133,62 +139,26 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         return [result[0], res]
 
-    # def predict_ter(self, block): # не используется
-    #     selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), delimiter=",")
-    #     # selected_classifiers = np.genfromtxt(os.path.join(out_path, "selected_classifiers.csv"), delimiter=",")
-    #     resK = self.kirClassifierWrapper.predict(block)
-    #     resS = self.classifierWrapper.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
-    #     print(f"K: {str(resK)}")
-    #     print(f"S: {str(resS)}")
-    #     res = np.concatenate((resS, resK), axis=None)
-    #     print(f"res before: {str(res)}")
-    #     selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
-    #
-    #     print(self.get_result(np.array([res[int(i)] for i in selected_classifiers])))
-    #     print(res, 'before convert result')
-    #     # Вывод только классификатор Шепелева
-    #
-    #     print(f"res after: {res}")
-    #     print(f"selected_classifiers: {selected_classifiers}")
-    #     print(res)
-    #     print(selected_classifiers)
-    #
-    #     result_val = self.get_result(np.array([res[int(i)] for i in selected_classifiers]))  # получение одного ответа
-    #     result_val = self.classifierWrapper.convert_result_log(np.atleast_1d(result_val))  # преобразование по группам
-    #     result_val = result_val[0]  # преобразование в int
-    #
-    #     res = self.classifierWrapper.convert_result_log(res)  # преобразование всех ответов по группам
-    #
-    #     logger.info(result_val)
-    #     logger.info(res)
-    #
-    #     return [result_val, res]
+    def predict1(self, block):
+        selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "_1_selected_classifiers.csv"), delimiter=",")
+        resK = self.kirClassifierWrapper1.predict(block)
+        resS = self.classifierWrapper1.predict(np.array([np.transpose(block[prestimul_length:, :num_of_channels])]))
 
-    # def get_result_old(self, res): # устарело
-    #     x = pd.Series(res)
-    #     # logger.info(x)
-    #     x = x.value_counts()
-    #     # logger.info(x)
-    #     ind = x[x == x.max()].index
-    #     # logger.info(ind)
-    #     if len(ind) > 1:
-    #         if 1 in ind:
-    #             return 1
-    #         else:
-    #             return 0
-    #     else:
-    #         return ind[0]
+        logger.info(f"K1: {str(resK)}")
+        logger.info(f"S1: {str(resS)}")
+        res = np.concatenate((resS, resK), axis=None)
+        logger.info(f"res before1: {str(res)}")
+        selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
-    # def get_result(self, res): # устарело
-    #     x = pd.Series(res)
-    #     # logger.info(x)
-    #     x = x.value_counts()
-    #     # logger.info(x)
-    #     x = pd.Series(data=map(lambda y, z: y * weights[z], x, x.index), index=x.index)  # числа ответов * веса ответов
-    #     # logger.info(x)
-    #     ind = x[x == x.max()].index
-    #     # logger.info(ind)
-    #     return ind[0]
+        res_1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))
+        result = self.test_by_clf_answers_weighted(res_1, SP_WEIGHT_1,
+                                                   odors_groups_valtest)  # получение ответа комитета
+
+        res = self.classifierWrapper.convert_result_log(res)
+        logger.info(f"res after1: {res}")
+        logger.info(f"selected_classifiers1: {selected_classifiers}")
+
+        return [result[0], res]
 
     def corrcoef_between_channels(self, data):
         return [abs(np.corrcoef((data[:, pair[0]], data[:, pair[1]]))[0][1]) for pair in
@@ -200,6 +170,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         return freq[(np.abs(np.fft.rfft(sig[:, num_channels - 2])) ** 2)[:len(freq[freq <= limit])].argmax(axis=0)]
 
     def train(self, path, stop=True):
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         if stop:
             self.stop()
         res = self.classifierWrapper.train(path)
@@ -213,114 +184,172 @@ class AbstractDataWorker(QThread, ExpFolder):
         val_res = res1  # создание переменной с ответами классификаторов для дальнейшего вывода в файл
         dat = np.fromfile(path, "i2").reshape(-1, num_channels)
         mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
-        # logger.info(mask)
         labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
         logger.info(labels)
-        # labels = [label for label in labels if label != 64] КОСТЫЛЬ НА УДАЛЕНИЕ 64 МЕТКИ
-        # logger.info(labels)
         labels = [self.labels_map[l] for l in labels][-len(res[0][1]):]
         logger.info(labels)
 
         res = [(r[0], np.mean(
             np.array(self.classifierWrapper.convert_result_log(r[1])) == self.classifierWrapper.convert_result_log(
                 labels)) * 100) for r in res]
-        # logger.info(res)
-
-        # logger.info(self.record.shape)
-        # logger.info(f"AbstractDataWorker.py: res(convert_result_log): {[o[1] for o in res]}") # скрыли точности по клф
         logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
-        Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{res}")
+        # Singleton.set("Точность на валидации", f"{Singleton.get('Точность на валидации')}\n{res}")
         write(Singleton.text())
 
-        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_acc_classifiers.csv"), np.array(res),
+        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_0_acc_classifiers.csv"), np.array(res),
                    delimiter=",")
-        # np.savetxt(os.path.join(out_path, self.time_now + "_acc_classifiers.csv"), np.array(res), delimiter=",")
         selected_classifiers = self.select_ter(res)
         # logger.info(selected_classifiers)  #
-        np.savetxt(str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_selected_classifiers.csv")),
+        np.savetxt(str(os.path.join(self.exp_folder,
+                                    f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_0_selected_classifiers.csv")),
                    np.array(selected_classifiers),
-                   # np.savetxt(os.path.join(out_path, self.time_now + "_selected_classifiers.csv"), np.array(selected_classifiers),
                    delimiter=",")
-        np.savetxt(os.path.join(self.exp_folder, "selected_classifiers.csv"), np.array(selected_classifiers),
+        np.savetxt(os.path.join(self.exp_folder, "0_selected_classifiers.csv"), np.array(selected_classifiers),
                    delimiter=",")
-        # np.savetxt(os.path.join(out_path, "selected_classifiers.csv"), np.array(selected_classifiers), delimiter=",")
-
-        # logger.info((np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0])))
-        # answers = np.array( #раньше получали ответы тут
-        #     [self.get_result(np.array([res1[int(i)][r] for i in selected_classifiers])) for r in range(len(res1[0]))])
-
-        # ## теперь
-        # res1 = np.transpose(np.array([res1[i] for i in selected_classifiers])) # преобразование ответов классификаторов
-        #
-        # answers = self.validate_by_clf_answers_weighted(res1,
-        #     self.convert_result_group(labels, odors_groups_to_valtest), odors_groups_to_valtest)  # получение ответов комитета
-        # # преобрование ответов комитета
 
         accuracy = 0  # задание низкой точности в случае невыбора классификаторов
         if len(selected_classifiers) >= 3:
-            res1 = np.transpose(np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
+            res1 = np.transpose(
+                np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
             logger.info(res1)
 
             weightsK = self.validate_by_clf_answers_weighted(res1,
-                self.convert_result_group(labels, odors_groups_valtest),
-                odors_groups_valtest)  # получение весов
+                                                             SP_WEIGHT_1,
+                                                             self.convert_result_group(labels, odors_groups_valtest),
+                                                             odors_groups_valtest)  # получение весов
             logger.info(weightsK)
             Singleton.set("Веса", weightsK)
 
-            answers = list(self.test_by_clf_answers_weighted(res1, odors_groups_valtest))  # получение ответов комитета и преобразование
+            answers = list(self.test_by_clf_answers_weighted(res1,
+                                                             SP_WEIGHT_1,
+                                                             odors_groups_valtest))  # получение ответов комитета и преобразование
             logger.info(answers)
-            # ## конец
-
-            # logger.info(answers)  #
             val_res.append(np.array(answers))  # добавление ответов в вывод
-
-            # logger.info(labels)
             val_res.append(np.array(labels))  # добавление реальных меток в вывод
-
-            # logger.info(self.classifierWrapper.convert_result_log(answers))  #
-            # logger.info(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-            #     self.classifierWrapper.convert_result_log(labels)))  #
-        
             accuracy = np.mean(np.array(self.classifierWrapper.convert_result_log(answers)) == np.array(
-                self.classifierWrapper.convert_result_log(list(self.convert_result_group(labels, odors_groups_valtest))))) * 100
+                self.classifierWrapper.convert_result_log(
+                    list(self.convert_result_group(labels, odors_groups_valtest))))) * 100
 
-        np.savetxt(str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_valid_answers.csv")),
-                   np.transpose(val_res),
-                   fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
+        np.savetxt(
+            str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_0_valid_answers.csv")),
+            np.transpose(val_res),
+            fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
+        train_accuracy.update({"MEAN_0": accuracy})
+        return accuracy
 
+    def train1(self, path, stop=True):
+        if stop:
+            self.stop()
+        res = self.classifierWrapper1.train(path)
+        resK = self.kirClassifierWrapper1.train(path)
+        res = res + resK
+        res1 = [r[1] for r in res]
+        val_res = res1  # создание переменной с ответами классификаторов для дальнейшего вывода в файл
+        dat = np.fromfile(path, "i2").reshape(-1, num_channels)
+        mask = np.isin(dat[:, -1], np.unique(dat[:, -1])[1:])
+        labels = [dat[:, -1][mask][i] for i in range(dat[:, -1][mask].shape[0])]
+        labels = [self.labels_map_2[l] for l in labels][-len(res[0][1]):]
+        res = [(r[0], np.mean(
+            np.array(self.classifierWrapper1.convert_result_log(r[1])) == self.classifierWrapper1.convert_result_log(
+                labels)) * 100) for r in res]
+        logger.info(f"Точности в порядке сортировки: {sorted([o[1] for o in res], reverse=True)}")
+        write(Singleton.text())
+        np.savetxt(os.path.join(self.exp_folder, self.time_now + "_1_acc_classifiers.csv"), np.array(res), delimiter=",")
+        selected_classifiers = self.select_ter(res)
+        np.savetxt(str(os.path.join(self.exp_folder,
+                                    f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_1_selected_classifiers.csv")),
+                   np.array(selected_classifiers),
+                   delimiter=",")
+        np.savetxt(os.path.join(self.exp_folder, "1_selected_classifiers.csv"), np.array(selected_classifiers),
+                   delimiter=",")
+
+        accuracy = 0  # задание низкой точности в случае невыбора классификаторов
+        if len(selected_classifiers) >= 3:
+            res1 = np.transpose(
+                np.array([res1[i] for i in selected_classifiers]))  # преобразование ответов классификаторов
+            logger.info(res1)
+
+            weightsK = self.validate_by_clf_answers_weighted(res1,
+                                                             SP_WEIGHT_2,
+                                                             self.convert_result_group(labels, odors_groups_valtest_2),
+                                                             odors_groups_valtest_2)  # получение весов
+            logger.info(weightsK)
+            Singleton.set("Веса", weightsK)
+
+            answers = list(self.test_by_clf_answers_weighted(res1,
+                                                             SP_WEIGHT_2,
+                                                             odors_groups_valtest_2))  # получение ответов комитета и преобразование
+            logger.info(answers)
+            val_res.append(np.array(answers))  # добавление ответов в вывод
+            val_res.append(np.array(labels))  # добавление реальных меток в вывод
+            accuracy = np.mean(np.array(self.classifierWrapper1.convert_result_log(answers)) == np.array(
+                self.classifierWrapper1.convert_result_log(
+                    list(self.convert_result_group(labels, odors_groups_valtest_2))))) * 100
+
+        np.savetxt(
+            str(os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_1_valid_answers.csv")),
+            np.transpose(val_res),
+            fmt="%d", delimiter=';')  # вывод ответов на валидации (классификаторы+реальные+полученные) в файл
+        train_accuracy.update({"MEAN_1": accuracy})
         return accuracy
 
     def validation_train(self, data):
-        train_file_path = os.path.join(self.exp_folder, self.path_to_res + "_val.dat")
-        # train_file_path = os.path.join(out_path, self.path_to_res + "_val.dat")
-        np.copy(data).reshape(-1).astype('int16').tofile(train_file_path)
-        self.create_inf(self.path_to_res + "_val", data.shape[0])
+        train_file_path1 = os.path.join(self.exp_folder, self.path_to_res + "_0_val.dat")
+        train_file_path2 = os.path.join(self.exp_folder, self.path_to_res + "_1_val.dat")
 
-        res = self.train(train_file_path, data_source_is_file)  # обучение и остановка на файле
-        self.accuracy.append(res)
-        with open(os.path.join(self.exp_folder, self.time_now + "_res.txt"), 'a+') as f:
-            # with open(os.path.join(out_path, self.time_now + "_res.txt"), 'a+') as f:
-            f.write(str(res))
+        np.copy(data).reshape(-1).astype('int16').tofile(train_file_path1)
+        np.copy(self.label_replace(data, odors_unite[0][0], [1, 1, 4, 4])).reshape(-1).astype('int16').tofile(train_file_path2)
+
+        self.create_inf(self.path_to_res + "_0_val", data.shape[0])
+        self.create_inf(self.path_to_res + "_1_val", data.shape[0])
+
+        # t2 = threading.Thread(target=self.train, args=(train_file_path1, data_source_is_file,))
+        t1 = threading.Thread(target=self.train1, args=(train_file_path2, data_source_is_file,))
+
+        # t2.start()
+        # time.sleep(1.5)
+        t1.start()
+
+        # t2.join()
+        t1.join()
+
+        print("MEAN:\t" + str(train_accuracy))
+        breakpoint()
+
+        self.accuracy_1.append(train_accuracy.get("MEAN_0"))
+        self.accuracy_2.append(train_accuracy.get("MEAN_1"))
+        with open(os.path.join(self.exp_folder, self.time_now + "_0_res.txt"), 'a+') as f:
+            f.write(str(train_accuracy.get("MEAN_0")))
+            f.write('\n')
+        with open(os.path.join(self.exp_folder, self.time_now + "_1_res.txt"), 'a+') as f:
+            f.write(str(train_accuracy.get("MEAN_1")))
             f.write('\n')
 
-        if (self.accuracy[-1] >= acc_need or (
-                len(self.accuracy) > 1 and (self.accuracy[-1] >= acc_need_two_ts) and (self.accuracy[-2] >= acc_need_two_ts))):
+        if (self.accuracy_2[-1] >= acc_need or (
+                len(self.accuracy_2) > 1 and (self.accuracy_2[-1] >= acc_need_two_ts) and (
+                self.accuracy_2[-2] >= acc_need_two_ts))):
 
-            # for k, v in Singleton.items():
-            #     print(f"Key={k}\tValue={v}")
+            if (self.accuracy_1[-1] >= acc_need or (
+                    len(self.accuracy_1) > 1 and (self.accuracy_1[-1] >= acc_need_two_ts) and (
+                    self.accuracy_1[-2] >= acc_need_two_ts))):
+                self.stop()
 
-            self.stop()
-            # self.sendMessage.emit("...")
-            Singleton.set("Результат", "Обучено")
-            write(Singleton.text())
+                Singleton.set("Результат", "Обучено")
+                write(Singleton.text())
 
-            self.sendMessage.emit("Обучено")
-            if one_file:
-                self.applyTest()
-                self.continueWork()
+                self.sendMessage.emit("Обучено")
+                if one_file:
+                    self.applyTest()
+                    self.continueWork()
         if data_source_is_file and not (
-                self.accuracy[-1] >= acc_need or (  # продолжение после остановки на файле, если НЕ обучено
-                len(self.accuracy) > 1 and (self.accuracy[-1] >= acc_need_two_ts) and (self.accuracy[-2] >= acc_need_two_ts))):
+                self.accuracy_2[-1] >= acc_need or (  # продолжение после остановки на файле, если НЕ обучено
+                len(self.accuracy_2) > 1 and (self.accuracy_2[-1] >= acc_need_two_ts) and (
+                self.accuracy_2[-2] >= acc_need_two_ts))):
+            self.continueWork()
+        if data_source_is_file and not (
+                self.accuracy_1[-1] >= acc_need or (  # продолжение после остановки на файле, если НЕ обучено
+                len(self.accuracy_1) > 1 and (self.accuracy_1[-1] >= acc_need_two_ts) and (
+                self.accuracy_1[-2] >= acc_need_two_ts))):
             self.continueWork()
 
     def applyTest(self):
@@ -331,45 +360,6 @@ class AbstractDataWorker(QThread, ExpFolder):
 
     def continueWork(self):  # продолжение работы
         self.working = True
-
-    # def select(self, val):
-    #     # val - список или кортеж кортежей, где каждый внутренний кортеж соответствует одному классификатору и имеет
-    #     # следующий вид: (*индекс классификатора*, *исходная точность валидации классификатора*)
-    #
-    #     round_ = lambda x: int(5 * round(float(x) / 5))  # округление по нашему правилу
-    #     val = [(clf[0], clf[1], round_(clf[1])) for clf in val]  # добавление округленной точности
-    #     srt = sorted(val, key=lambda x: x[1], reverse=True)  # сортировка по не округленной точности
-    #     td = list(
-    #         filter(lambda x: x if x[2] > acc_need_of_one_clf else None, srt))  # отбрасывание плохих классификаторов
-    #     if len(td) != 0:
-    #         if len(td) in (1, 2) and any(
-    #                 [td_[1] >= 80 for td_ in td]):  # если остался один (или 2), причем очень хороший, оставляем только его
-    #             logger.info(srt)  #
-    #             return sorted([td_[0] for td_ in td])
-    #         ranks = [(acc, list(clfs)) for (acc, clfs) in
-    #                  groupby(td, lambda x: x[2])]  # ранжируем оставшиеся классификаторы по
-    #         # округленным точностям
-    #         res = [clf[0] for clf in ranks[0][1]]  # сразу заносим в итоговый результат классификаторы из первого ранга
-    #         if len(res) >= 3:
-    #             return sorted(res)
-    #         else:
-    #             for rank in ranks[1:]:  # идем от второго ранга к худшим
-    #                 if rank[0] >= 70:  # если ранг не хуже 70%, берем все классификаторы в нем
-    #                     res += [clf[0] for clf in rank[1]]
-    #                 else:  # если ранг хуже 70%, добавляем из него по одному классификатору, пока не станет 3
-    #                     for k in range(len(rank[1])):
-    #                         res.append(rank[1][k][0])
-    #                         if len(res) >= 3:
-    #                             logger.info(res)  #
-    #                             return sorted(res)
-    #                 if len(res) >= 3:
-    #                     logger.info(res)  #
-    #                     return sorted(res)
-    #         logger.info(res)  #
-    #         if len(res) >= 1:  # костыль для того, чтоб не возвращать хорошие с плохими (лучше 1-2, чем 3 с плохим)
-    #             return sorted(res)  #
-    #     logger.info(srt)  #
-    #     return sorted([srt[i][0] for i in range(3)])
 
     def select(self, val):  # VERSION 2 of 03 March 2021
         # val - список или кортеж кортежей, где каждый внутренний кортеж соответствует одному классификатору и имеет
@@ -418,7 +408,6 @@ class AbstractDataWorker(QThread, ExpFolder):
 
     def create_inf(self, path_to_res, nNSamplings):
         with open(os.path.join(self.exp_folder, path_to_res + '.inf'), 'w') as f:
-            # with open(os.path.join(out_path, path_to_res + '.inf'), 'w') as f:
             f.write(
                 "[Version]\nDevice=Smell-ADC\n\n[Object]\nFILE=\"\"\n\n[Format]\nType=binary\n\n[Parameters]\nNChannels={0}\nNSamplings={1}\nSamplingFrequency={2}\n\n[ChannelNames]\n{3}"
                     .format(num_channels, nNSamplings, sampling_rate,
@@ -429,7 +418,8 @@ class AbstractDataWorker(QThread, ExpFolder):
             if len(group) == 1:  # если число элементов в группе равно одному
                 continue  # пропускаем
             for i in range(1, len(group)):  # для каждого индекса группы, кроме первого
-                data[:, -1] = np.where(data[:, -1] == group[i], group[0], data[:, -1])  # замена метки на первую в группе
+                data[:, -1] = np.where(data[:, -1] == group[i], group[0],
+                                    data[:, -1])  # замена метки на первую в группе
         # for i in range(data.shape[0]):  # для всех меток клапанов
         #     if data[i, -1] != 0:  # если метка не нулевая
         #         for group in odors_unite:  # просматриваем в цикле группы
@@ -485,7 +475,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         result_ind = np.argmax(np.asarray(result_weight))
         return result_ind
 
-    def validate_by_clf_answers_weighted(self, clf_answers, real_answers, grouping_map):
+    def validate_by_clf_answers_weighted(self, clf_answers, file, real_answers, grouping_map):
         """
         clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
                         ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора
@@ -557,7 +547,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             err_in_group = np.asarray(err_in_group)
             err_in_group_for_comb.append(err_in_group)
             sum_of_err = sum(err_in_group)
-            prob_of_err = (err_in_group + 1) / (sum_of_err+1)
+            prob_of_err = (err_in_group + 1) / (sum_of_err + 1)
             enntrop_for_ans = entropy(prob_of_err)
             list_of_entr_for_best_comb.append(enntrop_for_ans)
         list_of_entr_for_best_comb = np.asarray(list_of_entr_for_best_comb)
@@ -567,9 +557,10 @@ class AbstractDataWorker(QThread, ExpFolder):
         best_comb_by_entr = best_comb_list[best_comb_by_entr_id]
         super_best_comb = best_comb_by_entr[0]
         super_best_comb = np.asarray(weights_filler)  # заглушка для сохранения одинаковых весов
-        np.savetxt(fname='super_best_weights.weight',X=super_best_comb, delimiter=';')
-        np.savetxt(fname=str(os.path.join(self.exp_folder,  f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_super_best_weights.weight"))
-                   , X=super_best_comb, delimiter=';')
+        np.savetxt(fname=file, X=super_best_comb, delimiter=';')
+        np.savetxt(fname=str(
+            os.path.join(self.exp_folder, f"{datetime.now().strftime('%Y%m%d_%H_%M_%S')}_{file}"))
+            , X=super_best_comb, delimiter=';')
         return super_best_comb
 
         # return comb_list,acc_list,comb_ans
@@ -578,7 +569,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         # np.savetxt(fname='super_best_weights.weight',X=super_best_weights, delimiter=';')
         # return super_best_weights, np.amax(acc_list), comb_ans
 
-    def test_by_clf_answers_weighted(self, clf_answers, grouping_map):
+    def test_by_clf_answers_weighted(self, clf_answers, file, grouping_map):
         """
         clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
                         ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора
@@ -593,7 +584,7 @@ class AbstractDataWorker(QThread, ExpFolder):
 
         grouping_map - группировка в формате [[0,3][2,4][1]]    
         """
-        clf_clapan_weights = np.genfromtxt(fname='super_best_weights.weight', delimiter=';')
+        clf_clapan_weights = np.genfromtxt(fname=file, delimiter=';')
         all_clapans = sum(grouping_map, [])
         all_clapans.sort()
         weight_dict = np.vstack([all_clapans, clf_clapan_weights]).T
@@ -622,7 +613,6 @@ class AbstractDataWorker(QThread, ExpFolder):
                     result.append(j)
         return np.asarray(result)
 
-
     def dataProcessing(self, batch):
         self.tick.emit(self.corrcoef_between_channels(batch), self.breathing_rate(batch))
 
@@ -632,7 +622,6 @@ class AbstractDataWorker(QThread, ExpFolder):
         proc.start()
 
     def runThreadTrain(self):
-        # proc = threading.Thread(target=self.train, args=[os.path.join(out_path, self.path_to_res + ".dat")])
         proc = threading.Thread(target=self.train, args=[os.path.join(self.exp_folder, self.path_to_res + ".dat")])
         proc.daemon = False
         proc.start()
@@ -641,3 +630,10 @@ class AbstractDataWorker(QThread, ExpFolder):
         proc = threading.Thread(target=self.validation_train, args=[data])
         proc.daemon = False
         proc.start()
+
+    @classmethod
+    def label_replace(cls, data, equal, replace, other=[0]):
+        np.place(data[:, -1], data[:, -1] != equal, other)
+        np.place(data[:, -1], data[:, -1] == equal, replace)
+        return data
+

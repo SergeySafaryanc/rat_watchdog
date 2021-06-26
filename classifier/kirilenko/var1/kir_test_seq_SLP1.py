@@ -1,3 +1,4 @@
+# from classifier.kirilenko.kir_test_seq_SLP1 import pearson_corr_for_2d_signal
 # from configs.watchdog_config import *
 from configs.watchdog_config import *
 import numpy as np
@@ -6,7 +7,9 @@ import datetime
 import math
 import scipy.signal
 from sklearn import tree
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
+
 from sklearn.svm import SVC
 from itertools import combinations
 from tqdm import tqdm
@@ -19,12 +22,11 @@ from scipy.stats import trim_mean
 import sys
 import logging
 import pickle
-from sklearn.preprocessing import StandardScaler,MinMaxScaler,MaxAbsScaler,RobustScaler,PowerTransformer,Normalizer
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 logging.getLogger("numpy").setLevel(logging.WARNING)
 logging.getLogger("sklearn").setLevel(logging.WARNING)
 
 np.random.seed(42)
+
 
 def get_time_stamp(verbose=0):
     time=datetime.datetime.now().timetuple()
@@ -74,7 +76,7 @@ class Clapan:
         self.clapan_label = clapan_label
         self.clap_real_number = math.log(clapan_label,2)+1
         bin_clapan_label = np.asarray([int(x) for x in bin(int(self.clapan_label))[2:]])[::-1]
-        self.clap_real_number = np.where(bin_clapan_label>0)[0]+1
+        self.clap_real_number = np.where(bin_clapan_label > 0)[0] + 1
         self.openning_ind = clapan_index
         self.prestimul_opening = self.openning_ind-prestimul_length
         self.prestimul_closing = self.prestimul_opening+prestimul_length
@@ -211,6 +213,8 @@ def difference_2d_stimul_features(input_data,input_clapan, feature_type='Slope_o
     return clapan_sample
 
 
+
+
 def tst_Spl_original_signal(data,SamplingFrequency):
 
     test_data, test_clapans = read_dat_by_clapans(data, clapan_length=clapan_length,prestimul_length=prestimul_length,stimul_delay=stimul_delay)
@@ -221,12 +225,11 @@ def tst_Spl_original_signal(data,SamplingFrequency):
     test_dataset=np.vstack(test_dataset)
     test_features = test_dataset[:,:-1]
     test_labels = test_dataset[:,-1]
-    model_filename = KIR_OUT_LDA_1
+    model_filename = KIR_OUT_SLP_2
     loaded_model = pickle.load(open(model_filename, 'rb'))
     result_loaded = loaded_model.predict(test_features)
     if test_labels.shape[0]>1:
         output = result_loaded
     else:
         output = result_loaded[0]
-    print(f"Labels: {test_labels}\tOutput: {output}")
     return output-1

@@ -236,7 +236,7 @@ def slope_original_signal(data):
     train_labels = raw_labels
     clf7 = GradientBoostingClassifier(loss='deviance', learning_rate=0.012,n_estimators=50,subsample=0.2,criterion='friedman_mse',min_samples_split=3,max_depth=3,random_state=42)
     clf7.fit(train_features,train_labels)
-    model_filename = r'pretrained_model_SLP-ORS.mdl'
+    model_filename = KIR_OUT_SLP_1
     pickle.dump(clf7, open(model_filename, 'wb'))
     print('Model was trained')
 

@@ -6,10 +6,9 @@ from watchdog.worker.AbstractDataWorker import AbstractDataWorker
 from watchdog.worker.FileDataWorker import FileDataWorker
 from watchdog.worker.MainWorker import MainWorker
 from watchdog.gui.GUI import GUI
-from configs.watchdog_config import *
 import numpy as np
 from itertools import combinations
-
+from configs.watchdog_config import *
 from watchdog.utils.readme import Singleton
 from watchdog.worker.SocketDataWorker import SocketDataWorker
 from loguru import logger
@@ -20,7 +19,6 @@ class QtWatchdogController(ExpFolder):
         Singleton.set("Крыса", rat_name)
         Singleton.set("Каналов", num_channels)
         Singleton.set("Метки веществ", dict(zip([o[0] for o in odors_unite], [i[0] for i in odors])))
-        # Singleton.set("Веса", weights)
 
         super().__init__()
         self.channel_pairs = list(combinations(np.arange(0, num_of_channels), 2))
@@ -37,11 +35,6 @@ class QtWatchdogController(ExpFolder):
             self.dataCorr = np.load(os.path.join(self.exp_folder, 'correlations.npy')).tolist()
         if os.path.exists(os.path.join(self.exp_folder, 'breathing_rate.npy')):
             self.dataBR = np.load(os.path.join(self.exp_folder, 'breathing_rate.npy')).tolist()
-
-        # if os.path.exists(os.path.join(out_path, 'correlations.npy')):
-        #     self.dataCorr = np.load(os.path.join(out_path, 'correlations.npy')).tolist()
-        # if os.path.exists(os.path.join(out_path, 'breathing_rate.npy')):
-        #     self.dataBR = np.load(os.path.join(out_path, 'breathing_rate.npy')).tolist()
 
         if data_source_is_file:
             worker = MainWorker(inp_path, wait_time)
@@ -76,19 +69,17 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
-    def onResultTest(self, name, i, results, label):
+    def onResultTest(self, name, i, results, label, results1, label1):
+        print(f"R_L(0): {results}\t{label}")
+        print(f"R_L(1): {results1}\t{label1}")
         self.resultsCounter += 1
         result, resСlassifiers = results
         message, color = odors[int(result)]
-
-        # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
-        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
-        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), message]))
-        #     f.write('\n')
-        # with open(os.path.join(self.exp_folder, name + '_result_labels.csv'), 'a+') as f:
-        # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
-        #     f.write(';'.join([str(self.resultsCounter), name + '_' + str(i), str(result)]))
-        #     f.write('\n')
+        # если на message == ЦВ
+        if message == odors[0][0]:
+            result, resСlassifiers = results1
+            message, color = odors_2[int(result)]
+        print(f"Вывод на экран: {message}")
 
         # вывод ответов по всем классификаторам и предикта по комитету в виде меток
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result_labels.csv'), 'a+') as f:
@@ -96,7 +87,6 @@ class QtWatchdogController(ExpFolder):
                               str(label)]))
             f.write('\n')
 
-        # преобразование ответов классификаторов
         logger.info(resСlassifiers)
         resСlassifiers = self.convert_result_group(resСlassifiers, odors_groups_valtest)
         logger.info(resСlassifiers)
@@ -109,7 +99,6 @@ class QtWatchdogController(ExpFolder):
 
         # вывод ответов по всем классификаторам и предикта по комитету в текстовом виде
         with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
-        # with open(os.path.join(out_path, name + '_responses_classifiers.csv'), 'a+') as f:
             f.write(';'.join([str(self.resultsCounter), ";".join(map(lambda x: odors[x][0], resСlassifiers)), message,
                               odors[int(label)][0]]))
             f.write('\n')
@@ -146,10 +135,6 @@ class QtWatchdogController(ExpFolder):
 
     def sendMessage(self, message):
         self.gui.mainWindow.showMessage(message, "background: #CCC")
-        # try:
-        #     vk_bot.send_message(message)
-        # except Exception as e:
-        #     print(e)
 
     def resultValidation(self, results, label, name):
         result, resultList = results
@@ -162,7 +147,6 @@ class QtWatchdogController(ExpFolder):
         logger.info(f"QtWatchdogController.validationResult: {self.validationResult[0].keys()}")
         logger.info(f"Odors: {odors}")
         with open(os.path.join(self.exp_folder, name + '_validation_result.csv'), 'w') as f:
-        # with open(os.path.join(out_path, name + '_validation_result.csv'), 'w') as f:
             f.write(';'.join(map(lambda x: odors[x][0], self.validationResult[0].keys())))
             f.write('\n')
             f.write(';'.join(map(str, self.validationResult[0].values())))
@@ -209,3 +193,7 @@ class QtWatchdogController(ExpFolder):
                     result.append(j)
         return np.asarray(result)
 
+    def get_label_and_resClass(self, rc, label, odv):
+        resСlassifiers = self.convert_result_group(rc, odv)
+        label = self.convert_result_group(np.atleast_1d(np.asarray(label)), odv)[0]
+        return label, resСlassifiers

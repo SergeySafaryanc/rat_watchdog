@@ -221,7 +221,7 @@ def tst_Spl_original_signal(data,SamplingFrequency):
     test_dataset=np.vstack(test_dataset)
     test_features = test_dataset[:,:-1]
     test_labels = test_dataset[:,-1]
-    model_filename = KIR_OUT_LDA_1
+    model_filename = KIR_OUT_LDA_2
     loaded_model = pickle.load(open(model_filename, 'rb'))
     result_loaded = loaded_model.predict(test_features)
     if test_labels.shape[0]>1:

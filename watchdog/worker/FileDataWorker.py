@@ -8,6 +8,7 @@ from loguru import logger
 from itertools import chain
 import os
 
+
 class FileDataWorker(AbstractDataWorker):
     def __init__(self, f_name, name, bytes_to_read, epoch_time, decimate_rate, channel_pairs, train_flag):
         super().__init__(bytes_to_read, decimate_rate, channel_pairs, name, train_flag)
@@ -94,7 +95,9 @@ class FileDataWorker(AbstractDataWorker):
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(self.labels_map[label]))
+                                         self.classifierWrapper.convert_result(self.labels_map[label]),
+                                         self.predict1(block),
+                                         self.classifierWrapper1.convert_result(self.labels_map_2.get(label, -1)))
                     self.counter += 1
                     if self.counter == 250:  # количество подач на тест
                         self.stop()
