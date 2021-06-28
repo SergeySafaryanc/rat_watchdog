@@ -94,8 +94,16 @@ class FileDataWorker(AbstractDataWorker):
                     if self.is_test_started:
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
-                    self.resultTest.emit(self.name, self.counter, [self.predict(block), self.predict1(block)],
-                                         self.classifierWrapper.convert_result(self.labels_map[label]))
+                    logger.info(self.predict(block))
+                    if self.predict(block)[0] == 1:
+                        self.resultTest.emit(self.name, self.counter, self.predict(block),
+                                             self.classifierWrapper.convert_result(self.labels_map[label]), odors)
+                    else:
+                        self.resultTest.emit(self.name, self.counter, self.predict1(block),
+                                             self.classifierWrapper.convert_result(self.labels_map[label]), odors_2)
+                    # self.resultTest.emit(self.name, self.counter, [self.predict(block), self.predict1(block)],
+                    #                      [self.classifierWrapper.convert_result(self.labels_map[label]),
+                    #                       self.classifierWrapper1.convert_result(self.labels_map_2.get(label, 2))])
                                          # self.predict1(block),
                                          # self.classifierWrapper1.convert_result(self.labels_map_2.get(label, 0)))
                     self.counter += 1

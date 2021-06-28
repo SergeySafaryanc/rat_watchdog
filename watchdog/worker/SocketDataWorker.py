@@ -106,10 +106,17 @@ class SocketDataWorker(AbstractDataWorker):
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:
-                        self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                             self.classifierWrapper.convert_result(self.labels_map[label]),
-                                             self.predict1(block),
-                                             self.classifierWrapper1.convert_result(self.labels_map_2.get(label, -1)))
+                        if self.predict(block)[0] == 1:
+                            self.resultTest.emit(self.name, self.counter, self.predict(block),
+                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors)
+                        else:
+                            self.resultTest.emit(self.name, self.counter, self.predict1(block),
+                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors_2)
+
+                        # self.resultTest.emit(self.name, self.counter, self.predict(block),
+                        #                      self.classifierWrapper.convert_result(self.labels_map[label]),
+                        #                      self.predict1(block),
+                        #                      self.classifierWrapper1.convert_result(self.labels_map_2.get(label, -1)))
                         self.counter += 1
 
 
