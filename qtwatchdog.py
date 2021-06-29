@@ -13,13 +13,22 @@ def clearLogs():
     logs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs')  # получаем и перемещаем логи и модели ниже
     if (os.path.exists(logs)):
         shutil.move(logs, backupPath)
-    model1 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_LDA-ORS.mdl')
+    model1 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_LDA-ORS_1.mdl')
     if (os.path.exists(model1)):
         shutil.move(model1, backupPath)
-    model2 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_SLP-ORS.mdl')
+    model2 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_SLP-ORS_1.mdl')
     if (os.path.exists(model2)):
         shutil.move(model2, backupPath)
-    super_best = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'super_best_weights.weight')
+    model1 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_LDA-ORS_2.mdl')
+    if (os.path.exists(model1)):
+        shutil.move(model1, backupPath)
+    model2 = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pretrained_model_SLP-ORS_2.mdl')
+    if (os.path.exists(model2)):
+        shutil.move(model2, backupPath)
+    super_best = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'super_best_weights1.weight')
+    if (os.path.exists(super_best)):
+        shutil.move(super_best, backupPath)
+    super_best = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'super_best_weights2.weight')
     if (os.path.exists(super_best)):
         shutil.move(super_best, backupPath)
     # print(logs)

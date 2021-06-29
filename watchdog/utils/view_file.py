@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 N_CHANNELS = 18
-f = np.fromfile("/home/quantum/Documents/watchdog_files/out/20210626_15_42_39/train_20210622_13_23_52_no_corr_1_val.dat", "i2")
+f = np.fromfile("C:\\WatchdogFiles\\input\\train_20210526_11_59_15__1_val.dat", "i2")
 # s = np.fromfile("/home/quantum/Documents/watchdog_files/out/20210626_13_41_58/train_20210622_13_23_52_no_corr__1_val.dat", "i2")
 # f = np.fromfile("/home/quantum/Documents/watchdog_files/out/20210626_09_13_25/train_20210622_13_23_52_no_corr_changed_22-06-2021_18-012_val.dat", "i2")
 # print(f.shape)

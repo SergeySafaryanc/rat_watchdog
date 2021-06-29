@@ -298,7 +298,9 @@ class AbstractDataWorker(QThread, ExpFolder):
         train_file_path2 = os.path.join(self.exp_folder, self.path_to_res + "_1_val.dat")
 
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path1)
-        np.copy(self.label_replace(data, odors_unite[0][0], [1, 1, 4, 4])).reshape(-1).astype('int16').tofile(train_file_path2)
+        replacer = [odors_unite_2[0][0] for i in range(len(odors_unite_2[0]))]+[odors_unite_2[1][0] for i in range(len(odors_unite_2[1]))]
+        logger.info("replacer: {}", replacer)
+        np.copy(self.label_replace(data, odors_unite[0][0], replacer)).reshape(-1).astype('int16').tofile(train_file_path2)
 
         self.create_inf(self.path_to_res + "_0_val", data.shape[0])
         self.create_inf(self.path_to_res + "_1_val", data.shape[0])
