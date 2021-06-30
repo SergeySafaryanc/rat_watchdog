@@ -70,7 +70,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
-    resultTest = pyqtSignal(str, int, object, object, object)
+    resultTest = pyqtSignal(str, int, object, object, object, object)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
@@ -215,7 +215,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             weightsK = self.validate_by_clf_answers_weighted(res1,
                                                              SP_WEIGHT_1,
                                                              self.convert_result_group(labels, odors_groups_valtest),
-                                                             odors_groups_valtest)  # получение весов
+                                                             odors_groups_valtest, weights_filler_1)  # получение весов
             logger.info(weightsK)
             Singleton.set("Веса", weightsK)
 
@@ -272,7 +272,7 @@ class AbstractDataWorker(QThread, ExpFolder):
             weightsK = self.validate_by_clf_answers_weighted(res1,
                                                              SP_WEIGHT_2,
                                                              self.convert_result_group(labels, odors_groups_valtest_2),
-                                                             odors_groups_valtest_2)  # получение весов
+                                                             odors_groups_valtest_2, weights_filler_2)  # получение весов
             logger.info(weightsK)
             Singleton.set("Веса", weightsK)
 
@@ -467,7 +467,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         result_ind = np.argmax(np.asarray(result_weight))
         return result_ind
 
-    def validate_by_clf_answers_weighted(self, clf_answers, file, real_answers, grouping_map):
+    def validate_by_clf_answers_weighted(self, clf_answers, file, real_answers, grouping_map, weights_filler):
         """
         clf_answers - ответы  лучших классификаторов(зачастую трех) по отдельным калапанам. т.е. если 5 клапанов то диапазон ответов [0,1,2,3,4]
                         ответы подавать в виде 2d -массива, где строки - предъявления(стимулы), а столбцы - номер классификатора

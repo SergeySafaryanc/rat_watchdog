@@ -69,7 +69,14 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
-    def onResultTest(self, name, i, results, label, odors_):
+    def onResultTest(self, name, i, results, label, odors_, labels_missing_counter=0):
+        for lm in range(labels_missing_counter):
+            self.resultsCounter += 1
+
+            message, color = "%i. %s" % (self.resultsCounter, result_messages[1][0]), result_messages[1][1]
+
+            self.gui.mainWindow.addResultListItem(message, color)
+
         print(results)
         print(label)
         print(odors_)
