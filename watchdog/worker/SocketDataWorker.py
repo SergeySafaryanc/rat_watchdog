@@ -106,12 +106,28 @@ class SocketDataWorker(AbstractDataWorker):
                         if use_auto_train and self.counter >= count_train_stimuls and self.counter % train_step == 0:
                             self.runThreadValidationTrain(data[self.label_index_list[-count_train_stimuls] - prestimul_length:])
                     else:
+
+                        labels_missing_counter = -int(((self.counter % num_clapans) - self.label_missing_check[
+                            label]))  # число пропусков стимулов
+                        if labels_missing_counter == num_clapans:  # когда остаток от деления равен самому числу клапанов
+                            labels_missing_counter = 0  # число пропусков стимулов равно нулю
+                        if labels_missing_counter < 0:  # когда пропуски перешли на следующий цикл
+                            labels_missing_counter += num_clapans  # к числу пропусков прибавляем число клапанов
+                        logger.info("self.counter+1: {}", self.counter + 1)
+                        logger.info("labels_missing_counter: {}", labels_missing_counter)
+                        logger.info("label: {}", label)
+                        logger.info("self.label_missing_check[label]: {}", self.label_missing_check[label])
+                        self.counter += labels_missing_counter  # прибавление числа пропущенных стимулов
+                        logger.info("self.counter+1 fixed: {}", self.counter + 1)
+
                         if self.predict(block)[0] == 1:
                             self.resultTest.emit(self.time_now, self.counter, self.predict(block),
-                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors)
+                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors,
+                                             labels_missing_counter)
                         else:
                             self.resultTest.emit(self.time_now, self.counter, self.predict1(block),
-                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors_2)
+                                                 self.classifierWrapper.convert_result(self.labels_map[label]), odors_2,
+                                             labels_missing_counter)
 
                         # self.resultTest.emit(self.name, self.counter, self.predict(block),
                         #                      self.classifierWrapper.convert_result(self.labels_map[label]),

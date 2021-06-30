@@ -70,7 +70,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
-    resultTest = pyqtSignal(str, int, object, object, object, object)
+    resultTest = pyqtSignal(str, int, object, object, object, int)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
@@ -118,6 +118,12 @@ class AbstractDataWorker(QThread, ExpFolder):
                 if i in odors_unite_2[j]:
                     self.labels_map_2[i] = j
         logger.info(f"labels_map_2: {self.labels_map_2}")
+
+        self.label_missing_check = {}
+        odors_chain = list(chain(*odors_unite))
+        for i in range(len(odors_chain)):
+            self.label_missing_check[odors_chain[i]] = i
+        logger.info(f"label_missing_check: {self.label_missing_check}")
 
     def predict(self, block):
         selected_classifiers = np.genfromtxt(os.path.join(self.exp_folder, "0_selected_classifiers.csv"), delimiter=",")
