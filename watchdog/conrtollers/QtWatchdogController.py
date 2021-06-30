@@ -77,6 +77,12 @@ class QtWatchdogController(ExpFolder):
 
             self.gui.mainWindow.addResultListItem(message, color)
 
+            # вывод пропуска в логах
+            with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
+                f.write(
+                    ';'.join([str(self.resultsCounter), ";".join(list(result_messages[1][0] for i in range(10)))]))
+                f.write('\n')
+
         print(results)
         print(label)
         print(odors_)
