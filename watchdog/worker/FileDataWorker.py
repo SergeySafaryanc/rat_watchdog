@@ -23,6 +23,7 @@ class FileDataWorker(AbstractDataWorker):
         find_label = True
         with open(self.f_name, 'rb', buffering=0) as f:
             odor_labels_set = set(list(chain(*odors_unite)))
+            logger.info(f"odor_labels_set: {odor_labels_set}")
             size_read = 0
             while True:
                 if not self.working:
@@ -93,8 +94,21 @@ class FileDataWorker(AbstractDataWorker):
                     if self.is_test_started:
                         self.is_test_started = not self.is_test_started
                         self.counter = 0
+
+                    labels_missing_counter = -int(((self.counter % num_clapans) - self.label_missing_check[label]))  # число пропусков стимулов
+                    if labels_missing_counter == num_clapans:  # когда остаток от деления равен самому числу клапанов
+                        labels_missing_counter = 0  # число пропусков стимулов равно нулю
+                    if labels_missing_counter < 0:  # когда пропуски перешли на следующий цикл
+                        labels_missing_counter += num_clapans  # к числу пропусков прибавляем число клапанов
+                    logger.info("self.counter+1: {}", self.counter+1)
+                    logger.info("labels_missing_counter: {}", labels_missing_counter)
+                    logger.info("label: {}", label)
+                    logger.info("self.label_missing_check[label]: {}", self.label_missing_check[label])
+                    self.counter += labels_missing_counter  # прибавление числа пропущенных стимулов
+                    logger.info("self.counter+1 fixed: {}", self.counter+1)
+
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(self.labels_map[label]))
+                                         self.classifierWrapper.convert_result(self.labels_map[label]), labels_missing_counter)
                     self.counter += 1
                     if self.counter == 250:  # количество подач на тест
                         self.stop()

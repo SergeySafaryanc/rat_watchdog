@@ -76,7 +76,21 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
-    def onResultTest(self, name, i, results, label):
+    def onResultTest(self, name, i, results, label, labels_missing_counter=0):
+        for lm in range(labels_missing_counter):
+            self.resultsCounter += 1
+
+            message, color = "%i. %s" % (self.resultsCounter, result_messages[1][0]), result_messages[1][1]
+
+            self.gui.mainWindow.addResultListItem(message, color)
+
+            # вывод пропуска в логах
+            with open(os.path.join(self.exp_folder, name + '_responses_classifiers_and_result.csv'), 'a+') as f:
+                f.write(
+                    ';'.join([str(self.resultsCounter), ";".join(list(result_messages[1][0] for i in range(10)))]))
+                f.write('\n')
+
+
         self.resultsCounter += 1
         result, resСlassifiers = results
         message, color = odors[int(result)]
