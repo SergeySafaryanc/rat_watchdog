@@ -157,8 +157,8 @@ class AbstractDataWorker(QThread, ExpFolder):
         selected_classifiers = np.atleast_1d(selected_classifiers)  # костыль, когда один классификатор
 
         res_1 = np.atleast_2d(np.array([res[int(i)] for i in selected_classifiers]))
-        result = self.test_by_clf_answers_weighted(res_1, SP_WEIGHT_1,
-                                                   odors_groups_valtest)  # получение ответа комитета
+        result = self.test_by_clf_answers_weighted(res_1, SP_WEIGHT_2,
+                                                   odors_groups_valtest_2)  # получение ответа комитета
 
         res = self.classifierWrapper.convert_result_log(res)
         logger.info(f"res after1: {res}")
