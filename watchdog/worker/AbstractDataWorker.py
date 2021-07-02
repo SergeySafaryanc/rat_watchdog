@@ -120,7 +120,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         logger.info(f"labels_map_2: {self.labels_map_2}")
 
         self.label_missing_check = {}
-        odors_chain = list(chain(*odors_unite))
+        odors_chain = list(sorted(chain(*odors_unite)))
         for i in range(len(odors_chain)):
             self.label_missing_check[odors_chain[i]] = i
         logger.info(f"label_missing_check: {self.label_missing_check}")
@@ -306,6 +306,7 @@ class AbstractDataWorker(QThread, ExpFolder):
         np.copy(data).reshape(-1).astype('int16').tofile(train_file_path1)
         replacer = [odors_unite_2[0][0] for i in range(len(odors_unite_2[0]))]+[odors_unite_2[1][0] for i in range(len(odors_unite_2[1]))]
         logger.info("replacer: {}", replacer)
+        time.sleep(2)
         np.copy(self.label_replace(data, odors_unite[0][0], replacer)).reshape(-1).astype('int16').tofile(train_file_path2)
 
         self.create_inf(self.path_to_res + "_0_val", data.shape[0])
