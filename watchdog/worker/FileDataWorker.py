@@ -108,7 +108,8 @@ class FileDataWorker(AbstractDataWorker):
                     logger.info("self.counter+1 fixed: {}", self.counter+1)
 
                     self.resultTest.emit(self.name, self.counter, self.predict(block),
-                                         self.classifierWrapper.convert_result(self.labels_map[label]), labels_missing_counter)
+                                         self.classifierWrapper.convert_result(self.labels_map[label]),
+                                         labels_missing_counter, label)
                     self.counter += 1
                     if self.counter == 250:  # количество подач на тест
                         self.stop()

@@ -122,7 +122,7 @@ class SocketDataWorker(AbstractDataWorker):
 
                         self.resultTest.emit(self.time_now, self.counter, self.predict(block),
                                              self.classifierWrapper.convert_result(self.labels_map[label]),
-                                             labels_missing_counter)
+                                             labels_missing_counter, label)
                         self.counter += 1
 
 

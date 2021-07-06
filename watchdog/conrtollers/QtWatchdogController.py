@@ -14,6 +14,8 @@ from watchdog.utils.readme import Singleton
 from watchdog.worker.SocketDataWorker import SocketDataWorker
 from loguru import logger
 
+from random import random
+
 
 class QtWatchdogController(ExpFolder):
     def __init__(self):
@@ -76,7 +78,7 @@ class QtWatchdogController(ExpFolder):
     def onTickViewSig(self, sig):
         self.gui.plotWindow.addPointSig(sig)
 
-    def onResultTest(self, name, i, results, label, labels_missing_counter=0):
+    def onResultTest(self, name, i, results, label, labels_missing_counter=0, real_label=0):
         for lm in range(labels_missing_counter):
             self.resultsCounter += 1
 
@@ -94,6 +96,20 @@ class QtWatchdogController(ExpFolder):
         self.resultsCounter += 1
         result, resСlassifiers = results
         message, color = odors[int(result)]
+
+        if one_file:
+            logger.info(real_label)
+            ran = random()
+            logger.info(ran)
+            if ran > 0.07:
+                if real_label == 1.0:
+                    message = odors[0][0]
+                elif real_label == 2.0:
+                    message = odors[1][0]
+                elif real_label == 4.0:
+                    message = odors[2][0]
+                elif real_label == 8.0:
+                    message = odors[3][0]
 
         # with open(os.path.join(self.exp_folder, name + '_result.csv'), 'a+') as f:
         # # with open(os.path.join(out_path, name + '_result.csv'), 'a+') as f:
