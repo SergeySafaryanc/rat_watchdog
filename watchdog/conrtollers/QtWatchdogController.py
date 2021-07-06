@@ -101,7 +101,7 @@ class QtWatchdogController(ExpFolder):
             logger.info(real_label)
             ran = random()
             logger.info(ran)
-            if ran > 0.07:
+            if ran > 0.05:
                 if real_label == 1.0:
                     message = odors[0][0]
                 elif real_label == 2.0:
