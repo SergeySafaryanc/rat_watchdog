@@ -70,7 +70,7 @@ class AbstractDataWorker(QThread, ExpFolder):
     stopRecord = pyqtSignal(str, int)
     tick = pyqtSignal(object, float)
     startRecord = pyqtSignal()
-    resultTest = pyqtSignal(str, int, object, object, object, int)
+    resultTest = pyqtSignal(str, int, object, object, object, int, object)
     resultTrain = pyqtSignal(int, int)
     tickViewSig = pyqtSignal(object)
     sendMessage = pyqtSignal(str)
