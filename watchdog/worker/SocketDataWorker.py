@@ -123,11 +123,11 @@ class SocketDataWorker(AbstractDataWorker):
                         if self.predict(block)[0] == 1:
                             self.resultTest.emit(self.time_now, self.counter, self.predict(block),
                                                  self.classifierWrapper.convert_result(self.labels_map[label]), odors,
-                                             labels_missing_counter, label)
+                                             labels_missing_counter)
                         else:
                             self.resultTest.emit(self.time_now, self.counter, self.predict1(block),
                                                  self.classifierWrapper.convert_result(self.labels_map[label]), odors_2,
-                                             labels_missing_counter, label)
+                                             labels_missing_counter)
 
                         # self.resultTest.emit(self.name, self.counter, self.predict(block),
                         #                      self.classifierWrapper.convert_result(self.labels_map[label]),
